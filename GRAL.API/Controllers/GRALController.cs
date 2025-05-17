@@ -17,6 +17,8 @@ namespace GRAL.API.Controllers
         private static string _currentStatus = "Idle";
         private static readonly object _statusLock = new object();
         private static readonly string _gralExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GRAL.exe");
+        private static CancellationTokenSource? _logReaderCts;
+        private static Task? _logReaderTask;
 
         public GRALController(ILogger<GRALController> logger)
         {
@@ -66,6 +68,7 @@ namespace GRAL.API.Controllers
                     if (!string.IsNullOrEmpty(e.Data))
                     {
                         UpdateStatus(e.Data);
+                        _logger.LogInformation(e.Data);
                     }
                 };
                 _gralProcess.ErrorDataReceived += (sender, e) =>
@@ -73,11 +76,15 @@ namespace GRAL.API.Controllers
                     if (!string.IsNullOrEmpty(e.Data))
                     {
                         UpdateStatus($"Error: {e.Data}");
+                        _logger.LogError(e.Data);
                     }
                 };
 
                 _gralProcess.BeginOutputReadLine();
                 _gralProcess.BeginErrorReadLine();
+
+                // Запускаем чтение логов
+                StartLogReader(outputDir);
 
                 // Запускаем задачу для отслеживания завершения процесса
                 Task.Run(() =>
@@ -108,6 +115,7 @@ namespace GRAL.API.Controllers
                     }
                     finally
                     {
+                        StopLogReader();
                         _gralProcess = null;
                     }
                 });
@@ -135,6 +143,7 @@ namespace GRAL.API.Controllers
                 // Отправляем сигнал завершения процессу
                 process.Kill();
                 process.WaitForExit(5000); // Ждем завершения процесса
+                StopLogReader();
                 _gralProcess = null;
                 _currentStatus = "Simulation stopped";
 
@@ -164,6 +173,70 @@ namespace GRAL.API.Controllers
             lock (_statusLock)
             {
                 _currentStatus = status;
+            }
+        }
+
+        private void StartLogReader(string workingDirectory)
+        {
+            StopLogReader(); // Останавливаем предыдущий читатель, если он есть
+
+            _logReaderCts = new CancellationTokenSource();
+            _logReaderTask = Task.Run(async () =>
+            {
+                var logFilePath = Path.Combine(workingDirectory, "Logfile_GRALCore.txt");
+                var lastPosition = 0L;
+
+                while (!_logReaderCts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(logFilePath))
+                        {
+                            using var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            if (fs.Length > lastPosition)
+                            {
+                                fs.Seek(lastPosition, SeekOrigin.Begin);
+                                using var reader = new StreamReader(fs);
+                                string? line;
+                                while ((line = await reader.ReadLineAsync()) != null)
+                                {
+                                    _logger.LogInformation(line);
+                                }
+                                lastPosition = fs.Position;
+                            }
+                        }
+                        await Task.Delay(100, _logReaderCts.Token); // Проверяем каждые 100мс
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error reading log file");
+                        await Task.Delay(1000, _logReaderCts.Token); // При ошибке ждем подольше
+                    }
+                }
+            }, _logReaderCts.Token);
+        }
+
+        private void StopLogReader()
+        {
+            if (_logReaderCts != null)
+            {
+                _logReaderCts.Cancel();
+                _logReaderCts.Dispose();
+                _logReaderCts = null;
+            }
+
+            if (_logReaderTask != null)
+            {
+                try
+                {
+                    _logReaderTask.Wait(1000); // Ждем завершения задачи
+                }
+                catch (AggregateException) { } // Игнорируем исключения при отмене
+                _logReaderTask = null;
             }
         }
     }
