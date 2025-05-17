@@ -23,6 +23,20 @@ namespace GRAL_2001
      */
     public partial class Program
     {
+        private static CancellationTokenSource _cancellationTokenSource;
+        private static bool _isCancellationRequested = false;
+
+        public static void SetCancellationTokenSource(CancellationTokenSource cts)
+        {
+            _cancellationTokenSource = cts;
+        }
+
+        public static void CancelSimulation()
+        {
+            _isCancellationRequested = true;
+            _cancellationTokenSource?.Cancel();
+        }
+
         /*INPUT FILES :
           BASIC DOMAIN INFORMATION              GRAL.geb
           MAIN CONTROL PARAM FILEs              in.dat
@@ -782,9 +796,15 @@ namespace GRAL_2001
             if (Program.IOUTPUT <= 0 && Program.WaitForConsoleKey) // not for Soundplan or no keystroke
             {
                 Console.WriteLine();
-                Console.WriteLine("GRAL simulations finished. Press any key to continue...");
+                Console.WriteLine("GRAL simulations finished.");
                 Program.CleanUpMemory();
-                Console.ReadKey(true); 	// wait for a key input
+            }
+
+            // Проверяем, была ли запрошена отмена
+            if (_isCancellationRequested)
+            {
+                Console.WriteLine("Simulation was cancelled by user request.");
+                Environment.Exit(1);
             }
 
             Environment.Exit(0);        // Exit console

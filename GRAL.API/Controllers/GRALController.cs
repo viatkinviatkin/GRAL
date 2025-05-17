@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
-using GRAL_2001;
+using ProgramGralCore = GRAL_2001.Program;
 
 namespace GRAL.API.Controllers
 {
@@ -39,6 +39,9 @@ namespace GRAL.API.Controllers
                     Directory.SetCurrentDirectory(parameters.OutputDirectory);
                 }
 
+                // Устанавливаем CancellationTokenSource в GRAL
+                ProgramGralCore.SetCancellationTokenSource(_cancellationTokenSource);
+
                 // Запуск симуляции в отдельном потоке
                 await Task.Run(() =>
                 {
@@ -46,6 +49,10 @@ namespace GRAL.API.Controllers
                     {
                         // Запуск симуляции напрямую через Program.Main
                         GRAL_2001.Program.Main(new string[] { parameters.InputFile });
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogInformation("Симуляция была отменена пользователем");
                     }
                     catch (Exception ex)
                     {
@@ -83,8 +90,13 @@ namespace GRAL.API.Controllers
 
             try
             {
+                // Отменяем симуляцию через GRAL
+                ProgramGralCore.CancelSimulation();
+                
+                // Отменяем задачу
                 _cancellationTokenSource?.Cancel();
                 _isSimulationRunning = false;
+                
                 return Ok(new { message = "Симуляция остановлена" });
             }
             catch (Exception ex)
@@ -123,7 +135,7 @@ namespace GRAL.API.Controllers
     public class SimulationParameters
     {
         public string InputFile { get; set; }
-        public string OutputDirectory { get; set; }
+        public string OutputDirectory { get; set; } = "./";
         public Dictionary<string, object> AdditionalParameters { get; set; }
     }
 
