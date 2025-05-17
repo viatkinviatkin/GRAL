@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using GRAL_2001;
 using System.IO;
 using System.Threading;
+using GRAL_2001;
 
 namespace GRAL.API.Controllers
 {
@@ -44,12 +44,8 @@ namespace GRAL.API.Controllers
                 {
                     try
                     {
-                        // Инициализация и запуск GRAL
-                        var program = new GRAL_2001.Program();
-                        // TODO: Настройка параметров симуляции через parameters
-                        
-                        // Запуск основной логики
-                        program.Main(new string[] { parameters.InputFile });
+                        // Запуск симуляции напрямую через Program.Main
+                        GRAL_2001.Program.Main(new string[] { parameters.InputFile });
                     }
                     catch (Exception ex)
                     {
@@ -103,7 +99,6 @@ namespace GRAL.API.Controllers
         {
             try
             {
-                // TODO: Реализовать конфигурацию параметров симуляции
                 if (!string.IsNullOrEmpty(config.WorkingDirectory))
                 {
                     Directory.SetCurrentDirectory(config.WorkingDirectory);
@@ -112,7 +107,7 @@ namespace GRAL.API.Controllers
                 // Настройка количества потоков
                 if (config.MaxThreads > 0)
                 {
-                    // TODO: Установка максимального количества потоков для GRAL
+                    // TODO: Реализовать настройку количества потоков
                 }
 
                 return Ok(new { message = "Конфигурация обновлена", config });

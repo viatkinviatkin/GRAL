@@ -21,7 +21,7 @@ namespace GRAL_2001
         COMPREHENSIVE DESCRIPTION CAN BE FOUND IN OETTL, 2016
         THE GRAL MODEL HAS BEEN  DEVELOPED BY DIETMAR OETTL SINCE AROUND 1999.
      */
-    partial class Program
+    public partial class Program
     {
         /*INPUT FILES :
           BASIC DOMAIN INFORMATION              GRAL.geb
@@ -53,7 +53,7 @@ namespace GRAL_2001
           TRANSIENT GRAL MODE					GRAL_Vert_Conc.txt
          */
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             int p = (int)Environment.OSVersion.Platform;
             if ((p == 4) || (p == 6) || (p == 128))
