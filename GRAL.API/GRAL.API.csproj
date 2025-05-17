@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +15,12 @@
   <ItemGroup>
     <ProjectReference Include="..\src\GRAL.csproj" />
   </ItemGroup>
+
+  <Target Name="PublishGRAL" AfterTargets="Build">
+    <Exec Command="dotnet publish ..\src\GRAL.csproj -c Debug -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true" />
+    <Copy SourceFiles="..\src\bin\Debug\net8.0\win-x64\publish\GRAL.exe" 
+          DestinationFolder="$(OutputPath)" 
+          SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

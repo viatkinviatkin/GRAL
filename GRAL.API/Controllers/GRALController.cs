@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
+using System.Diagnostics;
 using ProgramGralCore = GRAL_2001.Program;
 
 namespace GRAL.API.Controllers
@@ -12,134 +13,167 @@ namespace GRAL.API.Controllers
     public class GRALController : ControllerBase
     {
         private readonly ILogger<GRALController> _logger;
-        private static bool _isSimulationRunning = false;
-        private static CancellationTokenSource _cancellationTokenSource;
+        private static Process? _gralProcess;
+        private static string _currentStatus = "Idle";
+        private static readonly object _statusLock = new object();
+        private static readonly string _gralExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GRAL.exe");
 
         public GRALController(ILogger<GRALController> logger)
         {
             _logger = logger;
         }
 
-        [HttpPost("run-simulation")]
-        public async Task<IActionResult> RunSimulation([FromBody] SimulationParameters parameters)
+        [HttpPost("run")]
+        public IActionResult RunSimulation([FromBody] SimulationRequest request)
         {
-            if (_isSimulationRunning)
-            {
-                return BadRequest(new { error = "Симуляция уже запущена" });
-            }
-
             try
             {
-                _isSimulationRunning = true;
-                _cancellationTokenSource = new CancellationTokenSource();
-
-                // Установка рабочей директории
-                if (!string.IsNullOrEmpty(parameters.OutputDirectory))
+                if (_gralProcess != null && !_gralProcess.HasExited)
                 {
-                    Directory.SetCurrentDirectory(parameters.OutputDirectory);
+                    return BadRequest(new { message = "Simulation is already running", status = _currentStatus });
                 }
 
-                // Устанавливаем CancellationTokenSource в GRAL
-                ProgramGralCore.SetCancellationTokenSource(_cancellationTokenSource);
+                if (string.IsNullOrEmpty(request.InputFile))
+                {
+                    return BadRequest(new { message = "Input file is required" });
+                }
 
-                // Запуск симуляции в отдельном потоке
-                await Task.Run(() =>
+                // Устанавливаем рабочую директорию
+                string outputDir = Path.GetDirectoryName(request.InputFile) ?? Directory.GetCurrentDirectory();
+                Directory.SetCurrentDirectory(outputDir);
+
+                // Запускаем GRAL как отдельный процесс
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = _gralExePath,
+                    Arguments = $"\"{request.InputFile}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    WorkingDirectory = outputDir
+                };
+
+                _gralProcess = Process.Start(startInfo);
+                if (_gralProcess == null)
+                {
+                    throw new Exception("Failed to start GRAL process");
+                }
+
+                // Запускаем асинхронное чтение вывода
+                _gralProcess.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        UpdateStatus(e.Data);
+                    }
+                };
+                _gralProcess.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        UpdateStatus($"Error: {e.Data}");
+                    }
+                };
+
+                _gralProcess.BeginOutputReadLine();
+                _gralProcess.BeginErrorReadLine();
+
+                // Запускаем задачу для отслеживания завершения процесса
+                Task.Run(() =>
                 {
                     try
                     {
-                        // Запуск симуляции напрямую через Program.Main
-                        GRAL_2001.Program.Main(new string[] { parameters.InputFile });
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        _logger.LogInformation("Симуляция была отменена пользователем");
+                        var process = _gralProcess;
+                        if (process != null)
+                        {
+                            process.WaitForExit();
+                            if (!process.HasExited)
+                            {
+                                UpdateStatus("Process was terminated unexpectedly");
+                            }
+                            else if (process.ExitCode != 0)
+                            {
+                                UpdateStatus($"Process exited with code {process.ExitCode}");
+                            }
+                            else
+                            {
+                                UpdateStatus("Simulation completed successfully");
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Ошибка при выполнении симуляции");
-                        throw;
+                        UpdateStatus($"Error monitoring process: {ex.Message}");
                     }
-                }, _cancellationTokenSource.Token);
+                    finally
+                    {
+                        _gralProcess = null;
+                    }
+                });
 
-                return Ok(new { message = "Симуляция успешно запущена", parameters });
+                return Ok(new { message = "Simulation started", status = _currentStatus });
             }
             catch (Exception ex)
             {
-                _isSimulationRunning = false;
-                _logger.LogError(ex, "Ошибка при запуске симуляции");
-                return StatusCode(500, new { error = "Внутренняя ошибка сервера" });
+                _currentStatus = $"Error: {ex.Message}";
+                return StatusCode(500, new { message = "Failed to start simulation", error = ex.Message, status = _currentStatus });
+            }
+        }
+
+        [HttpPost("stop")]
+        public IActionResult StopSimulation()
+        {
+            try
+            {
+                var process = _gralProcess;
+                if (process == null || process.HasExited)
+                {
+                    return Ok(new { message = "No simulation is running", status = _currentStatus });
+                }
+
+                // Отправляем сигнал завершения процессу
+                process.Kill();
+                process.WaitForExit(5000); // Ждем завершения процесса
+                _gralProcess = null;
+                _currentStatus = "Simulation stopped";
+
+                return Ok(new { message = "Simulation stopped", status = _currentStatus });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to stop simulation", error = ex.Message, status = _currentStatus });
             }
         }
 
         [HttpGet("status")]
         public IActionResult GetStatus()
         {
-            return Ok(new { 
-                isRunning = _isSimulationRunning,
-                status = _isSimulationRunning ? "Выполняется" : "Готов к работе"
-            });
-        }
-
-        [HttpPost("stop")]
-        public IActionResult StopSimulation()
-        {
-            if (!_isSimulationRunning)
-            {
-                return BadRequest(new { error = "Нет запущенной симуляции" });
-            }
-
-            try
-            {
-                // Отменяем симуляцию через GRAL
-                ProgramGralCore.CancelSimulation();
-                
-                // Отменяем задачу
-                _cancellationTokenSource?.Cancel();
-                _isSimulationRunning = false;
-                
-                return Ok(new { message = "Симуляция остановлена" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при остановке симуляции");
-                return StatusCode(500, new { error = "Внутренняя ошибка сервера" });
-            }
+            return Ok(new { status = _currentStatus });
         }
 
         [HttpPost("configure")]
-        public IActionResult ConfigureSimulation([FromBody] ConfigurationParameters config)
+        public IActionResult ConfigureSimulation([FromBody] SimulationConfig config)
         {
-            try
-            {
-                if (!string.IsNullOrEmpty(config.WorkingDirectory))
-                {
-                    Directory.SetCurrentDirectory(config.WorkingDirectory);
-                }
+            // TODO: Реализовать конфигурацию
+            return Ok(new { message = "Configuration updated" });
+        }
 
-                // Настройка количества потоков
-                if (config.MaxThreads > 0)
-                {
-                    // TODO: Реализовать настройку количества потоков
-                }
-
-                return Ok(new { message = "Конфигурация обновлена", config });
-            }
-            catch (Exception ex)
+        private void UpdateStatus(string status)
+        {
+            lock (_statusLock)
             {
-                _logger.LogError(ex, "Ошибка при конфигурации симуляции");
-                return StatusCode(500, new { error = "Внутренняя ошибка сервера" });
+                _currentStatus = status;
             }
         }
     }
 
-    public class SimulationParameters
+    public class SimulationRequest
     {
         public string InputFile { get; set; }
-        public string OutputDirectory { get; set; } = "./";
-        public Dictionary<string, object> AdditionalParameters { get; set; }
     }
 
-    public class ConfigurationParameters
+    public class SimulationConfig
     {
         public int MaxThreads { get; set; }
         public string WorkingDirectory { get; set; }

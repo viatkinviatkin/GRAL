@@ -9,21 +9,18 @@
     <AssemblyTitle>GRAL</AssemblyTitle>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-    <Optimize>true</Optimize>
-    <TieredCompilation>true</TieredCompilation>
+    <Optimize>false</Optimize>
+    <TieredCompilation>false</TieredCompilation>
     <TieredCompilationQuickJit>false</TieredCompilationQuickJit>
     <DOTNET_TC_QuickJitForLoops>false</DOTNET_TC_QuickJitForLoops>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TieredPGO>true</TieredPGO>
-    <DOTNET_EnableDiagnostics>false</DOTNET_EnableDiagnostics>
+    <TieredPGO>false</TieredPGO>
+    <DOTNET_EnableDiagnostics>true</DOTNET_EnableDiagnostics>
     <DOTNET_ENABLE_PROFILING>false</DOTNET_ENABLE_PROFILING>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
-    <DebugType>embedded</DebugType>
+    <DebugType>full</DebugType>
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
-    <!-- 
-    <PublishAot>true</PublishAot>
-    -->
   </PropertyGroup>
 
 </Project>
