@@ -1,17 +1,49 @@
 <mat-card>
-  <mat-card-title
-    >Форма изменения экологических параметров для моделирования
-    GRAL</mat-card-title
+  <mat-card-title>Загрузка файлов для моделирования GRAL</mat-card-title>
+  <div
+    class="dropzone"
+    [class.dropzone-over]="isDragOver"
+    (drop)="onDrop($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
   >
-  <mat-form-field appearance="fill" style="width: 100%; margin-bottom: 16px">
-    <mat-label>Файл параметров</mat-label>
-    <mat-select [formControl]="selectedFile">
-      <ng-container *ngFor="let file of files">
-        <mat-option [value]="file">{{ file }}</mat-option>
-      </ng-container>
-    </mat-select>
-  </mat-form-field>
-  <button mat-raised-button color="primary" (click)="onModel()">
-    Моделировать
+    <input
+      type="file"
+      multiple
+      (change)="onFileChange($event)"
+      [accept]="acceptString"
+      style="display: none"
+      #fileInput
+    />
+    <button
+      *ngIf="files.length === 0"
+      mat-raised-button
+      color="primary"
+      (click)="fileInput.click()"
+    >
+      Выбрать файлы
+    </button>
+    <button
+      *ngIf="files.length > 0"
+      mat-raised-button
+      color="warn"
+      (click)="clearFiles()"
+    >
+      Открепить файлы
+    </button>
+    <div>или перетащите файлы сюда</div>
+    <div class="file-list">
+      <div *ngFor="let file of files">{{ file.name }}</div>
+    </div>
+    <div *ngIf="error" style="color: red; margin-top: 8px">{{ error }}</div>
+  </div>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSendFiles()"
+    [disabled]="!!error || files.length === 0"
+    style="margin-top: 16px"
+  >
+    Отправить файлы
   </button>
 </mat-card>

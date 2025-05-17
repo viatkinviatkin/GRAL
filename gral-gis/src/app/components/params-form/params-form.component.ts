@@ -1,38 +1,87 @@
-import { Component, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-params-form',
   standalone: true,
-  imports: [
-    MatCardModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatButtonModule,
-    ReactiveFormsModule,
-    CommonModule,
-  ],
+  imports: [CommonModule, MatCardModule, MatButtonModule, HttpClientModule],
+  providers: [HttpClient],
   templateUrl: './params-form.component.html',
   styleUrls: ['./params-form.component.scss'],
 })
-export class ParamsFormComponent implements OnInit {
-  files: string[] = ['params1.json', 'params2.json', 'params3.json']; // заглушка, заменить на API
-  selectedFile = new FormControl('');
+export class ParamsFormComponent {
+  requiredFiles = [
+    'in.dat',
+    'meteopgt.all',
+    'mettimeseries.dat',
+    'point.dat',
+    'emissions001.dat',
+    'GRAMMin.dat',
+    'GRAL.geb',
+  ];
+  files: File[] = [];
+  error: string | null = null;
+  isDragOver = false;
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  ngOnInit(): void {
-    // Здесь можно сделать запрос к API для получения списка файлов
-    // this.http.get<string[]>('/api/computation/files').subscribe(data => this.files = data);
+  get acceptString(): string {
+    return this.requiredFiles.map((f) => '.' + f.split('.').pop()).join(',');
   }
 
-  onModel() {
-    // TODO: отправить выбранный файл на backend для моделирования
-    alert('Моделирование для файла: ' + this.selectedFile.value);
+  onFileChange(event: any) {
+    this.files = Array.from(event.target.files);
+    this.validateFiles();
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = false;
+    if (event.dataTransfer) {
+      this.files = Array.from(event.dataTransfer.files);
+      this.validateFiles();
+    }
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = false;
+  }
+
+  validateFiles() {
+    const fileNames = this.files.map((f) => f.name);
+    const missing = this.requiredFiles.filter(
+      (req) => !fileNames.includes(req)
+    );
+    if (missing.length > 0) {
+      this.error = 'Не хватает файлов: ' + missing.join(', ');
+    } else {
+      this.error = null;
+    }
+  }
+
+  onSendFiles() {
+    this.validateFiles();
+    if (this.error) return;
+
+    const formData = new FormData();
+    this.files.forEach((file) => formData.append('files', file, file.name));
+    this.http.post('/api/computation/upload', formData).subscribe({
+      next: () => alert('Файлы успешно загружены!'),
+      error: () => alert('Ошибка загрузки файлов!'),
+    });
+  }
+
+  clearFiles() {
+    this.files = [];
+    this.error = null;
   }
 }

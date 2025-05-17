@@ -1,1 +1,20 @@
 /* Стили для params-form */
+
+.dropzone {
+  border: 2px dashed #90caf9;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.dropzone-over {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+.file-list {
+  margin-top: 8px;
+  font-size: 14px;
+}
