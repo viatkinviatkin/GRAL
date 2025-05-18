@@ -28,6 +28,7 @@ export class MapComponent implements AfterViewInit {
     this.map = L.map('map', {
       center: [55.751244, 37.618423],
       zoom: 12,
+      attributionControl: false,
     });
 
     const osmLayer = L.tileLayer(
