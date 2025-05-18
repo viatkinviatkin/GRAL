@@ -41,9 +41,18 @@
     mat-raised-button
     color="primary"
     (click)="onSendFiles()"
-    [disabled]="!!error || files.length === 0"
+    [disabled]="files.length === 0"
     style="margin-top: 16px"
   >
     Отправить файлы
+  </button>
+  <button
+    mat-raised-button
+    [color]="isModeling ? 'warn' : 'accent'"
+    (click)="onModeling()"
+    [disabled]="!!error || files.length === 0"
+    style="margin-top: 16px"
+  >
+    {{ isModeling ? "Остановить моделирование" : "Запустить моделирование" }}
   </button>
 </mat-card>

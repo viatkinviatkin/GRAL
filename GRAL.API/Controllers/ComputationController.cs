@@ -6,7 +6,7 @@ namespace GRAL.API.Controllers
     [Route("api/computation")]
     public class ComputationController : ControllerBase
     {
-        private readonly string _computationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "computation");
+        private readonly string _computationPath = Directory.GetCurrentDirectory() + "./computation";
 
         [HttpGet("files")]
         public IActionResult GetFiles()

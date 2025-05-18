@@ -25,6 +25,7 @@ export class ParamsFormComponent {
   files: File[] = [];
   error: string | null = null;
   isDragOver = false;
+  isModeling = false;
 
   constructor(private http: HttpClient) {}
 
@@ -57,6 +58,7 @@ export class ParamsFormComponent {
   }
 
   validateFiles() {
+    return;
     const fileNames = this.files.map((f) => f.name);
     const missing = this.requiredFiles.filter(
       (req) => !fileNames.includes(req)
@@ -74,14 +76,51 @@ export class ParamsFormComponent {
 
     const formData = new FormData();
     this.files.forEach((file) => formData.append('files', file, file.name));
-    this.http.post('/api/computation/upload', formData).subscribe({
-      next: () => alert('Файлы успешно загружены!'),
-      error: () => alert('Ошибка загрузки файлов!'),
-    });
+    this.http
+      .post('https://localhost:44373/api/computation/upload', formData)
+      .subscribe({
+        next: () => alert('Файлы успешно загружены!'),
+        error: () => alert('Ошибка загрузки файлов!'),
+      });
   }
 
   clearFiles() {
     this.files = [];
     this.error = null;
+  }
+
+  onModeling() {
+    if (!this.isModeling) {
+      // Запуск моделирования
+      const inputFile = this.files.find(
+        (f) => f.name.toLowerCase() === 'in.dat'
+      );
+      if (!inputFile) {
+        alert('Не найден обязательный файл in.dat!');
+        return;
+      }
+      this.isModeling = true;
+      this.http
+        .post('https://localhost:44373/api/gral/run', {
+          InputFile: './computation',
+        })
+        .subscribe({
+          next: () => {},
+          error: () => {
+            this.isModeling = false;
+            alert('Ошибка запуска моделирования!');
+          },
+        });
+    } else {
+      // Остановка моделирования
+      this.http.post('https://localhost:44373/api/gral/stop', {}).subscribe({
+        next: () => {
+          this.isModeling = false;
+        },
+        error: () => {
+          alert('Ошибка остановки моделирования!');
+        },
+      });
+    }
   }
 }
