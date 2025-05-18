@@ -1,6 +1,8 @@
 body {
   margin: 0;
   font-family: Roboto, Arial, sans-serif;
+
+  --mdc-elevated-card-container-elevation: none;
 }
 
 .main-layout {
