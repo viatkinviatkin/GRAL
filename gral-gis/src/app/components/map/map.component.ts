@@ -2,8 +2,12 @@ import { Component, AfterViewInit } from '@angular/core';
 import * as L from 'leaflet';
 import 'leaflet.heat';
 import 'leaflet-draw';
-import html2canvas from 'html2canvas';
+import 'leaflet-easyprint';
+import { MapExportService } from './map-export.service';
 // import 'leaflet-history'; // если появится npm-пакет или подключить вручную
+
+// Исправляем пути к маркерам Leaflet
+// default icon in script
 
 @Component({
   selector: 'app-map',
@@ -14,20 +18,29 @@ import html2canvas from 'html2canvas';
 export class MapComponent implements AfterViewInit {
   private map!: L.Map;
   private drawnItems = new L.FeatureGroup();
+  private easyPrintControl: any;
 
+  constructor(private mapExportService: MapExportService) {}
+  ngOnInit(): void {
+    L.Icon.Default.imagePath = 'assets/leaflet/';
+  }
   ngAfterViewInit(): void {
     this.map = L.map('map', {
       center: [55.751244, 37.618423],
       zoom: 12,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(this.map);
+    const osmLayer = L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        attribution: '© OpenStreetMap contributors',
+        crossOrigin: true,
+      }
+    ).addTo(this.map);
 
     this.map.addLayer(this.drawnItems);
 
-    // Leaflet.draw toolbar
+    // Leaflet.draw toolbar (только прямоугольник)
     const drawControl = new (L.Control as any).Draw({
       edit: {
         featureGroup: this.drawnItems,
@@ -35,14 +48,12 @@ export class MapComponent implements AfterViewInit {
       },
       draw: {
         marker: true,
-        polygon: {
-          allowIntersection: false,
-          showArea: false,
-          drawError: { color: '#e1e100', message: 'Ошибка полигона!' },
+        rectangle: {
           shapeOptions: { color: 'red', fill: false, weight: 2 },
+          showArea: false,
         },
+        polygon: false,
         polyline: false,
-        rectangle: false,
         circle: false,
         circlemarker: false,
       },
@@ -70,19 +81,25 @@ export class MapComponent implements AfterViewInit {
       )
       .addTo(this.map);
 
+    // Добавляем easyPrint control (без кнопки, вызов через метод)
+    let printControl = (this.easyPrintControl = (L as any)
+      .easyPrint({
+        tileLayer: osmLayer,
+        sizeModes: ['Current'],
+        exportOnly: true,
+        hideControlContainer: true,
+      })
+      .addTo(this.map));
+
+    // Подписка на событие экспорта
+    this.mapExportService.exportRequested$.subscribe(() => {
+      if (this.easyPrintControl && this.map) {
+        this.easyPrintControl.printMap('CurrentSize', 'map-export');
+      }
+    });
+
     // Заготовка под history layer (если появится)
     // const historyLayer = (L as any).historyLayer(...);
     // historyLayer.addTo(this.map);
-  }
-
-  exportMap() {
-    const mapElement = document.getElementById('map');
-    if (!mapElement) return;
-    html2canvas(mapElement).then((canvas) => {
-      const link = document.createElement('a');
-      link.download = 'map.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
   }
 }

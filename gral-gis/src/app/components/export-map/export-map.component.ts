@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import html2canvas from 'html2canvas';
 import { MatButtonModule } from '@angular/material/button';
+import { Injectable } from '@angular/core';
+import { MapExportService } from '../map/map-export.service';
 
 @Component({
   selector: 'app-export-map',
@@ -10,14 +12,9 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrls: ['./export-map.component.scss'],
 })
 export class ExportMapComponent {
+  constructor(private mapExportService: MapExportService) {}
+
   exportMap() {
-    const mapElement = document.getElementById('map');
-    if (!mapElement) return;
-    html2canvas(mapElement).then((canvas) => {
-      const link = document.createElement('a');
-      link.download = 'map.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
+    this.mapExportService.requestExport();
   }
 }
