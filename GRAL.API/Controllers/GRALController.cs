@@ -6,6 +6,7 @@ using System.Threading;
 using System.Diagnostics;
 using ProgramGralCore = GRAL_2001.Program;
 
+
 namespace GRAL.API.Controllers
 {
     [ApiController]
@@ -55,6 +56,7 @@ namespace GRAL.API.Controllers
                     CreateNoWindow = true,
                     WorkingDirectory = outputDir
                 };
+
 
                 _gralProcess = Process.Start(startInfo);
                 if (_gralProcess == null)

@@ -5,36 +5,6 @@ body {
   --mdc-elevated-card-container-elevation: none;
 }
 
-.main-layout {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-}
-
-.left-panel {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.right-panel {
-  flex: 1;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.timeline {
-  margin-top: 16px;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  text-align: center;
-}
-
-mat-card {
-  width: 100%;
+.mat-mdc-raised-button.mat-accent {
+  --mdc-protected-button-container-color: #3fb34c;
 }

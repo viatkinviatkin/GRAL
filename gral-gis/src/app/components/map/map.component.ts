@@ -4,6 +4,7 @@ import 'leaflet.heat';
 import 'leaflet-draw';
 import 'leaflet-easyprint';
 import { MapExportService } from './map-export.service';
+import { HttpClient } from '@angular/common/http';
 // import 'leaflet-history'; // если появится npm-пакет или подключить вручную
 
 // Исправляем пути к маркерам Leaflet
@@ -20,13 +21,17 @@ export class MapComponent implements AfterViewInit {
   private drawnItems = new L.FeatureGroup();
   private easyPrintControl: any;
 
-  constructor(private mapExportService: MapExportService) {}
+  constructor(
+    private mapExportService: MapExportService,
+    private http: HttpClient
+  ) {}
   ngOnInit(): void {
     L.Icon.Default.imagePath = 'assets/leaflet/';
+    //this.loadHeatData();
   }
   ngAfterViewInit(): void {
     this.map = L.map('map', {
-      center: [55.751244, 37.618423],
+      center: [52.58181587791204, 39.53921411100283],
       zoom: 12,
       attributionControl: false,
     });
@@ -102,5 +107,14 @@ export class MapComponent implements AfterViewInit {
     // Заготовка под history layer (если появится)
     // const historyLayer = (L as any).historyLayer(...);
     // historyLayer.addTo(this.map);
+  }
+
+  loadHeatData(): void {
+    this.http.get('assets/data.json').subscribe((data: any) => {
+      const heatData = JSON.parse(JSON.stringify(data));
+      const heat = (L as any)
+        .heatLayer(heatData, { radius: 8, maxZoom: 15, max: 240 })
+        .addTo(this.map);
+    });
   }
 }
