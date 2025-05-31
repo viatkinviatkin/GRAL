@@ -5,6 +5,8 @@ import 'leaflet-draw';
 import 'leaflet-easyprint';
 import { MapExportService } from './map-export.service';
 import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { MapService } from '../../services/map.service';
 // import 'leaflet-history'; // если появится npm-пакет или подключить вручную
 
 // Исправляем пути к маркерам Leaflet
@@ -13,6 +15,7 @@ import { HttpClient } from '@angular/common/http';
 @Component({
   selector: 'app-map',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss'],
 })
@@ -20,14 +23,15 @@ export class MapComponent implements AfterViewInit {
   private map!: L.Map;
   private drawnItems = new L.FeatureGroup();
   private easyPrintControl: any;
+  drawControl: any;
 
   constructor(
     private mapExportService: MapExportService,
-    private http: HttpClient
+    private http: HttpClient,
+    private mapService: MapService
   ) {}
   ngOnInit(): void {
     L.Icon.Default.imagePath = 'assets/leaflet/';
-    //this.loadHeatData();
   }
   ngAfterViewInit(): void {
     this.map = L.map('map', {
@@ -46,12 +50,7 @@ export class MapComponent implements AfterViewInit {
 
     this.map.addLayer(this.drawnItems);
 
-    // Leaflet.draw toolbar (только прямоугольник)
-    const drawControl = new (L.Control as any).Draw({
-      edit: {
-        featureGroup: this.drawnItems,
-        remove: true,
-      },
+    this.drawControl = new (L.Control as any).Draw({
       draw: {
         marker: true,
         rectangle: {
@@ -63,17 +62,35 @@ export class MapComponent implements AfterViewInit {
         circle: false,
         circlemarker: false,
       },
+      edit: {
+        featureGroup: this.drawnItems,
+        remove: true,
+      },
     });
-    this.map.addControl(drawControl);
+    this.map.addControl(this.drawControl);
 
     this.map.on(L.Draw.Event.CREATED, (e: any) => {
       this.drawnItems.addLayer(e.layer);
+
+      if (e.layer instanceof L.Marker) {
+        // Получаем координаты маркера
+        const marker = e.layer as L.Marker;
+        const latlng = marker.getLatLng();
+
+        // Отправляем координаты в сервис
+        this.mapService.setMarkerCoordinates({
+          x: latlng.lng,
+          y: latlng.lat,
+        });
+      }
     });
+
     this.map.on(L.Draw.Event.EDITED, (e: any) => {
       // Можно обработать изменения, если нужно
     });
-    this.map.on(L.Draw.Event.DELETED, (e: any) => {
-      // Можно обработать удаление, если нужно
+    this.map.on(L.Draw.Event.DELETED, () => {
+      // Очищаем координаты при удалении маркера
+      this.mapService.setMarkerCoordinates(null);
     });
 
     // Пример heat layer

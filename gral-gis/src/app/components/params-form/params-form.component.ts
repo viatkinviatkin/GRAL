@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,6 +26,9 @@ import {
 } from '@angular/material/core';
 import { ComputationService } from '../../services/computation.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MapService, MarkerCoordinates } from '../../services/map.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -92,7 +95,7 @@ interface MettseriesRecord {
   templateUrl: './params-form.component.html',
   styleUrls: ['./params-form.component.scss'],
 })
-export class ParamsFormComponent implements OnInit {
+export class ParamsFormComponent implements OnInit, OnDestroy {
   requiredFiles = [
     'point.dat',
     'GRAL.geb',
@@ -142,13 +145,15 @@ export class ParamsFormComponent implements OnInit {
     'Bioaerosols',
   ];
   isSimulationEnabled = false;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
     private dateAdapter: DateAdapter<any>,
     private computationService: ComputationService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private mapService: MapService
   ) {
     this.dateAdapter.setLocale('ru-RU');
     this.pointDatForm = this.fb.group({
@@ -211,7 +216,24 @@ export class ParamsFormComponent implements OnInit {
     this.records.removeAt(index);
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    // Подписываемся на изменения координат маркера
+    this.mapService.markerCoordinates$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((coordinates) => {
+        if (coordinates) {
+          this.pointDatForm.patchValue({
+            x: coordinates.x,
+            y: coordinates.y,
+          });
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   get acceptString(): string {
     return this.requiredFiles.map((f) => '.' + f.split('.').pop()).join(',');
