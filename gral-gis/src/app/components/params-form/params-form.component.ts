@@ -4,6 +4,34 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+} from '@angular/forms';
+
+interface PointDatModel {
+  x: number;
+  y: number;
+  z: number;
+  h2s: number;
+  exitVelocity: number;
+  diameter: number;
+  temperature: number;
+  sourceGroup: string;
+  f25: number;
+  f10: number;
+  diaMax: number;
+  density: number;
+  vDep25: number;
+  vDep10: number;
+  vDepMax: number;
+  depConc: number;
+}
 
 @Component({
   selector: 'app-params-form',
@@ -14,6 +42,11 @@ import { MatTabsModule } from '@angular/material/tabs';
     MatButtonModule,
     HttpClientModule,
     MatTabsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    FormsModule,
+    ReactiveFormsModule,
   ],
   providers: [HttpClient],
   templateUrl: './params-form.component.html',
@@ -33,8 +66,29 @@ export class ParamsFormComponent implements OnInit {
   error: string | null = null;
   isDragOver = false;
   isModeling = false;
+  pointDatForm: FormGroup;
+  sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private fb: FormBuilder) {
+    this.pointDatForm = this.fb.group({
+      x: [0],
+      y: [0],
+      z: [0],
+      h2s: [0],
+      exitVelocity: [0],
+      diameter: [0],
+      temperature: [0],
+      sourceGroup: [''],
+      f25: [0],
+      f10: [0],
+      diaMax: [0],
+      density: [0],
+      vDep25: [0],
+      vDep10: [0],
+      vDepMax: [0],
+      depConc: [0],
+    });
+  }
 
   ngOnInit() {}
 
@@ -130,6 +184,13 @@ export class ParamsFormComponent implements OnInit {
           alert('Ошибка остановки моделирования!');
         },
       });
+    }
+  }
+
+  onPointDatSubmit() {
+    if (this.pointDatForm.valid) {
+      console.log('Point.dat form submitted:', this.pointDatForm.value);
+      // Здесь будет логика отправки данных на сервер
     }
   }
 }

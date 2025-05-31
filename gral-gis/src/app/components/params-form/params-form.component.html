@@ -62,8 +62,112 @@
     <mat-tab-group>
       <mat-tab *ngFor="let file of requiredFiles" [label]="file">
         <div class="tab-content">
-          <!-- Здесь будет содержимое для каждой вкладки -->
-          <p>Содержимое файла {{ file }}</p>
+          <ng-container *ngIf="file === 'point.dat'">
+            <form [formGroup]="pointDatForm" (ngSubmit)="onPointDatSubmit()">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>X</mat-label>
+                  <input matInput type="number" formControlName="x" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Y</mat-label>
+                  <input matInput type="number" formControlName="y" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Z</mat-label>
+                  <input matInput type="number" formControlName="z" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>H2S [kg/h]</mat-label>
+                  <input matInput type="number" formControlName="h2s" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Exit vel. [m/s]</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="exitVelocity"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Diameter [m]</mat-label>
+                  <input matInput type="number" formControlName="diameter" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Temp. [K]</mat-label>
+                  <input matInput type="number" formControlName="temperature" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Source group</mat-label>
+                  <mat-select formControlName="sourceGroup">
+                    <mat-option
+                      *ngFor="let group of sourceGroups"
+                      [value]="group"
+                    >
+                      {{ group }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>F2.5</mat-label>
+                  <input matInput type="number" formControlName="f25" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>F10</mat-label>
+                  <input matInput type="number" formControlName="f10" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>DiaMax</mat-label>
+                  <input matInput type="number" formControlName="diaMax" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Density</mat-label>
+                  <input matInput type="number" formControlName="density" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>VDep2.5</mat-label>
+                  <input matInput type="number" formControlName="vDep25" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>VDep10</mat-label>
+                  <input matInput type="number" formControlName="vDep10" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>VDepMax</mat-label>
+                  <input matInput type="number" formControlName="vDepMax" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Dep_Conc</mat-label>
+                  <input matInput type="number" formControlName="depConc" />
+                </mat-form-field>
+              </div>
+
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                style="margin-top: 16px"
+              >
+                Сохранить
+              </button>
+            </form>
+          </ng-container>
+          <p *ngIf="file !== 'point.dat'">Содержимое файла {{ file }}</p>
         </div>
       </mat-tab>
     </mat-tab-group>
