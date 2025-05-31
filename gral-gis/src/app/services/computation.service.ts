@@ -45,10 +45,11 @@ export interface GralGebModel {
 }
 
 export interface PollutantModel {
-  pollutant: string;
-  wetDepositionCW: number;
-  wetDepositionAlphaW: number;
-  decayRate: number;
+  name: string;
+  type: number;
+  density: number;
+  diameter: number;
+  depositionVelocity: number;
 }
 
 @Injectable({

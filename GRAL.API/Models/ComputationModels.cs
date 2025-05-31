@@ -31,7 +31,7 @@ namespace GRAL.API.Models
         public int CellCountX { get; set; }
         public int CellCountY { get; set; }
         public int HorizontalSlices { get; set; }
-        public List<int> SourceGroups { get; set; }
+        public string SourceGroups { get; set; }
         public double WestBorder { get; set; }
         public double EastBorder { get; set; }
         public double SouthBorder { get; set; }
@@ -40,11 +40,11 @@ namespace GRAL.API.Models
 
     public class PollutantModel
     {
-        public string PollutantName { get; set; }
-        public int PollutantType { get; set; }
-        public double PollutantDensity { get; set; }
-        public double PollutantDiameter { get; set; }
-        public double PollutantDepositionVelocity { get; set; }
+        public string Name { get; set; }
+        public int Type { get; set; }
+        public double Density { get; set; }
+        public double Diameter { get; set; }
+        public double DepositionVelocity { get; set; }
     }
 
     public class SaveAllFilesModel

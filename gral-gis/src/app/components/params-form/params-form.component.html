@@ -441,15 +441,8 @@
             <form [formGroup]="pollutantForm" (ngSubmit)="onPollutantSubmit()">
               <div class="form-grid">
                 <mat-form-field>
-                  <mat-label>
-                    Загрязнитель
-                    <mat-icon
-                      matTooltip="Выберите тип загрязнителя"
-                      class="help-icon"
-                      >help_outline</mat-icon
-                    >
-                  </mat-label>
-                  <mat-select formControlName="pollutant">
+                  <mat-label>Название загрязнителя</mat-label>
+                  <mat-select formControlName="name" required>
                     <mat-option
                       *ngFor="let pollutant of pollutants"
                       [value]="pollutant"
@@ -460,47 +453,41 @@
                 </mat-form-field>
 
                 <mat-form-field>
-                  <mat-label>
-                    Wet deposition cW setting
-                    <mat-icon
-                      matTooltip="Настройка влажного осаждения cW"
-                      class="help-icon"
-                      >help_outline</mat-icon
-                    >
-                  </mat-label>
+                  <mat-label>Тип загрязнителя</mat-label>
+                  <mat-select formControlName="type" required>
+                    <mat-option [value]="1">Газ</mat-option>
+                    <mat-option [value]="2">Частицы</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>Плотность [кг/м³]</mat-label>
                   <input
                     matInput
                     type="number"
-                    formControlName="wetDepositionCW"
+                    formControlName="density"
+                    required
                   />
                 </mat-form-field>
 
                 <mat-form-field>
-                  <mat-label>
-                    Wet deposition alphaW setting
-                    <mat-icon
-                      matTooltip="Настройка влажного осаждения alphaW"
-                      class="help-icon"
-                      >help_outline</mat-icon
-                    >
-                  </mat-label>
+                  <mat-label>Диаметр [м]</mat-label>
                   <input
                     matInput
                     type="number"
-                    formControlName="wetDepositionAlphaW"
+                    formControlName="diameter"
+                    required
                   />
                 </mat-form-field>
 
                 <mat-form-field>
-                  <mat-label>
-                    Decay rate
-                    <mat-icon
-                      matTooltip="Скорость распада для всех групп источников"
-                      class="help-icon"
-                      >help_outline</mat-icon
-                    >
-                  </mat-label>
-                  <input matInput type="number" formControlName="decayRate" />
+                  <mat-label>Скорость осаждения [м/с]</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="depositionVelocity"
+                    required
+                  />
                 </mat-form-field>
               </div>
 

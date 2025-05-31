@@ -114,7 +114,7 @@ export class ParamsFormComponent implements OnInit {
   mettseriesForm: FormGroup;
   sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
   gralGebForm: FormGroup;
-  pollutantForm: FormGroup;
+  pollutantForm!: FormGroup;
   pollutants = [
     'NOx',
     'PM10',
@@ -188,12 +188,7 @@ export class ParamsFormComponent implements OnInit {
       northBorder: [-280, [Validators.required]],
     });
 
-    this.pollutantForm = this.fb.group({
-      pollutant: ['NOx', [Validators.required]],
-      wetDepositionCW: [0, [Validators.required]],
-      wetDepositionAlphaW: [0, [Validators.required]],
-      decayRate: [0, [Validators.required]],
-    });
+    this.initPollutantForm();
   }
 
   get records() {
@@ -453,5 +448,15 @@ export class ParamsFormComponent implements OnInit {
         duration: 5000,
       });
     }
+  }
+
+  initPollutantForm() {
+    this.pollutantForm = this.fb.group({
+      name: [this.pollutants[0], Validators.required],
+      type: [1, Validators.required],
+      density: [0, [Validators.required, Validators.min(0)]],
+      diameter: [0, [Validators.required, Validators.min(0)]],
+      depositionVelocity: [0, [Validators.required, Validators.min(0)]],
+    });
   }
 }

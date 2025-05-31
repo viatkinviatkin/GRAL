@@ -79,11 +79,11 @@ namespace GRAL.API.Services
         public async Task SavePollutantAsync(PollutantModel model)
         {
             var content = new StringBuilder();
-            content.AppendLine($"{model.PollutantName} !Pollutant name");
-            content.AppendLine($"{model.PollutantType} !Pollutant type (1=gas, 2=particle)");
-            content.AppendLine($"{model.PollutantDensity:F2} !Pollutant density [kg/m³]");
-            content.AppendLine($"{model.PollutantDiameter:F2} !Pollutant diameter [m]");
-            content.AppendLine($"{model.PollutantDepositionVelocity:F2} !Pollutant deposition velocity [m/s]");
+            content.AppendLine($"{model.Name} !Pollutant name");
+            content.AppendLine($"{model.Type} !Pollutant type (1=gas, 2=particle)");
+            content.AppendLine($"{model.Density:F2} !Pollutant density [kg/m³]");
+            content.AppendLine($"{model.Diameter:F2} !Pollutant diameter [m]");
+            content.AppendLine($"{model.DepositionVelocity:F2} !Pollutant deposition velocity [m/s]");
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "Pollutant.txt"), content.ToString());
         }
