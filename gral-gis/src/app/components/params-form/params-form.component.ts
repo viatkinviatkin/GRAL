@@ -10,12 +10,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   FormsModule,
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
   FormArray,
+  Validators,
 } from '@angular/forms';
 import {
   DateAdapter,
@@ -77,6 +79,7 @@ interface MettseriesRecord {
     MatDatepickerModule,
     MatNativeDateModule,
     MatIconModule,
+    MatTooltipModule,
     FormsModule,
     ReactiveFormsModule,
   ],
@@ -90,13 +93,14 @@ interface MettseriesRecord {
 })
 export class ParamsFormComponent implements OnInit {
   requiredFiles = [
+    'point.dat',
+    'GRAL.geb',
+    'mettimeseries.dat',
     'in.dat',
     'meteopgt.all',
-    'mettimeseries.dat',
-    'point.dat',
+
     'emissions001.dat',
     'GRAMMin.dat',
-    'GRAL.geb',
   ];
   files: File[] = [];
   error: string | null = null;
@@ -105,6 +109,7 @@ export class ParamsFormComponent implements OnInit {
   pointDatForm: FormGroup;
   mettseriesForm: FormGroup;
   sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
+  gralGebForm: FormGroup;
 
   constructor(
     private http: HttpClient,
@@ -133,6 +138,21 @@ export class ParamsFormComponent implements OnInit {
 
     this.mettseriesForm = this.fb.group({
       records: this.fb.array([]),
+    });
+
+    this.gralGebForm = this.fb.group({
+      cellSizeX: [10, [Validators.required, Validators.min(0)]],
+      cellSizeY: [10, [Validators.required, Validators.min(0)]],
+      cellSizeZ: [2, [Validators.required, Validators.min(0)]],
+      cellSizeZStretch: [1.01, [Validators.required, Validators.min(1)]],
+      cellsCountX: [17, [Validators.required, Validators.min(1)]],
+      cellsCountY: [10, [Validators.required, Validators.min(1)]],
+      horizontalSlices: [1, [Validators.required, Validators.min(1)]],
+      sourceGroups: ['1', [Validators.required]],
+      westBorder: [480, [Validators.required]],
+      eastBorder: [650, [Validators.required]],
+      southBorder: [-380, [Validators.required]],
+      northBorder: [-280, [Validators.required]],
     });
   }
 
@@ -276,6 +296,26 @@ export class ParamsFormComponent implements OnInit {
         };
       });
       console.log('Mettseries form submitted:', records);
+      // Здесь будет логика отправки данных на сервер
+    }
+  }
+
+  onGralGebSubmit() {
+    if (this.gralGebForm.valid) {
+      const formData = this.gralGebForm.value;
+      const content = `${formData.cellSizeX}               !cell-size for cartesian wind field in GRAL in x-direction
+${formData.cellSizeY}               !cell-size for cartesian wind field in GRAL in y-direction
+${formData.cellSizeZ},${formData.cellSizeZStretch}                !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height
+${formData.cellsCountX}                !number of cells for counting grid in GRAL in x-direction
+${formData.cellsCountY}                !number of cells for counting grid in GRAL in y-direction
+${formData.horizontalSlices}                !Number of horizontal slices
+${formData.sourceGroups},                !Source groups to be computed seperated by a comma
+${formData.westBorder}                !West border of GRAL model domain [m]
+${formData.eastBorder}                !East border of GRAL model domain [m]
+${formData.southBorder}                !South border of GRAL model domain [m]
+${formData.northBorder}                !North border of GRAL model domain [m]`;
+
+      console.log('Gral.geb form submitted:', content);
       // Здесь будет логика отправки данных на сервер
     }
   }

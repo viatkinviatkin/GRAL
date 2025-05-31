@@ -263,7 +263,174 @@
               </div>
             </form>
           </ng-container>
-          <p *ngIf="file !== 'point.dat' && file !== 'mettimeseries.dat'">
+          <ng-container *ngIf="file === 'GRAL.geb'">
+            <form [formGroup]="gralGebForm" (ngSubmit)="onGralGebSubmit()">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>
+                    Размер ячейки по X [m]
+                    <mat-icon
+                      matTooltip="Размер ячейки для декартового поля ветра в GRAL по X"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="cellSizeX" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Размер ячейки по Y [m]
+                    <mat-icon
+                      matTooltip="Размер ячейки для декартового поля ветра в GRAL по Y"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="cellSizeY" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Размер ячейки по Z [m]
+                    <mat-icon
+                      matTooltip="Размер ячейки для декартового поля ветра в GRAL по Z"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="cellSizeZ" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Коэффициент растяжения Z
+                    <mat-icon
+                      matTooltip="Коэффициент растяжения для увеличения высоты ячеек"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="cellSizeZStretch"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Количество ячеек по X
+                    <mat-icon
+                      matTooltip="Количество ячеек для сетки подсчета в GRAL по X"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="cellsCountX" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Количество ячеек по Y
+                    <mat-icon
+                      matTooltip="Количество ячеек для сетки подсчета в GRAL по Y"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="cellsCountY" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Количество горизонтальных срезов
+                    <mat-icon
+                      matTooltip="Количество горизонтальных срезов"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="horizontalSlices"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Группы источников
+                    <mat-icon
+                      matTooltip="Группы источников для отдельного расчета, разделенные запятыми"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput formControlName="sourceGroups" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Западная граница [m]
+                    <mat-icon
+                      matTooltip="Западная граница области модели GRAL"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="westBorder" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Восточная граница [m]
+                    <mat-icon
+                      matTooltip="Восточная граница области модели GRAL"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="eastBorder" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Южная граница [m]
+                    <mat-icon
+                      matTooltip="Южная граница области модели GRAL"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="southBorder" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Северная граница [m]
+                    <mat-icon
+                      matTooltip="Северная граница области модели GRAL"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="northBorder" />
+                </mat-form-field>
+              </div>
+
+              <button mat-raised-button color="primary" type="submit">
+                Сохранить
+              </button>
+            </form>
+          </ng-container>
+          <p
+            *ngIf="
+              file !== 'point.dat' &&
+              file !== 'mettimeseries.dat' &&
+              file !== 'GRAL.geb'
+            "
+          >
             Содержимое файла {{ file }}
           </p>
         </div>
