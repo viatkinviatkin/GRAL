@@ -81,7 +81,7 @@ namespace GRAL.API.Services
             var content = new StringBuilder();
             foreach (var record in records)
             {
-                content.AppendLine($"{record.Date},{record.Hour},{record.Velocity:F1},{record.Direction:F1},{record.SC}");
+                content.AppendLine($"{record.Date},{record.Hour},{record.Velocity},{record.Direction},{record.SC}");
             }
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "mettimeseries.dat"), content.ToString());
@@ -114,7 +114,7 @@ namespace GRAL.API.Services
             // Записываем сгруппированные данные
             foreach (var record in groupedRecords)
             {
-                content.AppendLine($"{record.WindDirection:F1},{record.WindSpeed:F1},{record.StabilityClass},{record.Frequency}");
+                content.AppendLine($"{record.WindDirection},{record.WindSpeed},{record.StabilityClass},{record.Frequency}");
             }
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "meteopgt.all"), content.ToString());
@@ -127,8 +127,8 @@ namespace GRAL.API.Services
             content.AppendLine($"{model.CellSizeX,-16} !cell-size for cartesian wind field in GRAL in x-direction");
             content.AppendLine($"{model.CellSizeY,-16} !cell-size for cartesian wind field in GRAL in y-direction");
             content.AppendLine($"2,1.01  !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
-            content.AppendLine($"{(model.WestBorder - model.EastBorder)/10,-16} !number of cells for counting grid in GRAL in x-direction");
-            content.AppendLine($"{(model.NorthBorder - model.SouthBorder)/10 ,-16} !number of cells for counting grid in GRAL in y-direction");
+            content.AppendLine($"{Math.Abs(model.WestBorder - model.EastBorder)/10,-16} !number of cells for counting grid in GRAL in x-direction");
+            content.AppendLine($"{Math.Abs(model.NorthBorder - model.SouthBorder)/10 ,-16} !number of cells for counting grid in GRAL in y-direction");
             content.AppendLine($"{1,-16} !Number of horizontal slices");
             content.AppendLine($"{model.SourceGroups},  !Source groups to be computed seperated by a comma");
             content.AppendLine($"{model.WestBorder,-16} !West border of GRAL model domain [m]");

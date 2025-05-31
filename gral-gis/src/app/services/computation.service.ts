@@ -6,7 +6,7 @@ export interface PointDatModel {
   x: number;
   y: number;
   z: number;
-  h2s: number;
+  sourceEmission: number;
   exitVelocity: number;
   diameter: number;
   temperature: number;

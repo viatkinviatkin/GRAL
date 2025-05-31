@@ -27,8 +27,8 @@ import {
 import { ComputationService } from '../../services/computation.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MapService, MarkerCoordinates } from '../../services/map.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, interval, Subscription } from 'rxjs';
+import { takeUntil, switchMap, takeWhile } from 'rxjs/operators';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -46,7 +46,7 @@ interface PointDatModel {
   x: number;
   y: number;
   z: number;
-  h2s: number;
+  source: number;
   exitVelocity: number;
   diameter: number;
   temperature: number;
@@ -146,6 +146,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   ];
   isSimulationEnabled = false;
   private destroy$ = new Subject<void>();
+  private statusPollingSubscription?: Subscription;
 
   constructor(
     private http: HttpClient,
@@ -160,7 +161,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
       x: [366],
       y: [-277],
       z: [10],
-      h2s: [25],
+      sourceEmission: [25],
       exitVelocity: [0],
       diameter: [0.2],
       temperature: [273],
@@ -247,6 +248,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.stopStatusPolling();
   }
 
   get acceptString(): string {
@@ -312,17 +314,23 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   onModeling() {
     if (!this.isModeling) {
       // Запуск моделирования
-
       this.isModeling = true;
       this.http
         .post('https://localhost:44373/api/gral/run', {
           InputFile: './computation',
         })
         .subscribe({
-          next: () => {},
-          error: () => {
+          next: () => {
+            // Начинаем опрос статуса
+            this.startStatusPolling();
+          },
+          error: (error) => {
             this.isModeling = false;
-            alert('Ошибка запуска моделирования!');
+            this.snackBar.open(
+              'Ошибка запуска моделирования: ' + error.message,
+              'OK',
+              { duration: 5000 }
+            );
           },
         });
     } else {
@@ -330,11 +338,56 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
       this.http.post('https://localhost:44373/api/gral/stop', {}).subscribe({
         next: () => {
           this.isModeling = false;
+          this.stopStatusPolling();
         },
-        error: () => {
-          alert('Ошибка остановки моделирования!');
+        error: (error) => {
+          this.snackBar.open(
+            'Ошибка остановки моделирования: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
         },
       });
+    }
+  }
+
+  private startStatusPolling() {
+    this.statusPollingSubscription = interval(2000) // Опрос каждые 2 секунды
+      .pipe(
+        switchMap(() =>
+          this.http.get('https://localhost:44373/api/gral/status')
+        ),
+        takeWhile(() => this.isModeling) // Продолжаем опрос, пока isModeling true
+      )
+      .subscribe({
+        next: (response: any) => {
+          const status = response.status;
+          if (
+            status === 'No simulation is running' ||
+            status === 'Simulation stopped' ||
+            status === 'Simulation completed successfully'
+          ) {
+            this.isModeling = false;
+            this.stopStatusPolling();
+            this.snackBar.open(status, 'OK', { duration: 3000 });
+          }
+        },
+        error: (error) => {
+          this.isModeling = false;
+          this.stopStatusPolling();
+          this.snackBar.open(
+            'Ошибка получения статуса: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
+        },
+      });
+  }
+
+  private stopStatusPolling() {
+    if (this.statusPollingSubscription) {
+      this.statusPollingSubscription.unsubscribe();
+      this.statusPollingSubscription = undefined;
     }
   }
 
