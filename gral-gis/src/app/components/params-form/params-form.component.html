@@ -167,7 +167,105 @@
               </button>
             </form>
           </ng-container>
-          <p *ngIf="file !== 'point.dat'">Содержимое файла {{ file }}</p>
+          <ng-container *ngIf="file === 'mettimeseries.dat'">
+            <form
+              [formGroup]="mettseriesForm"
+              (ngSubmit)="onMettseriesSubmit()"
+            >
+              <div class="records-container">
+                <div class="records-header">
+                  <div class="header-cell">Дата</div>
+                  <div class="header-cell">Час</div>
+                  <div class="header-cell">Скорость [m/s]</div>
+                  <div class="header-cell">Направление [deg]</div>
+                  <div class="header-cell">SC</div>
+                  <div class="header-cell">Действия</div>
+                </div>
+
+                <div class="records-content">
+                  <div formArrayName="records">
+                    <div
+                      *ngFor="let record of records.controls; let i = index"
+                      [formGroupName]="i"
+                      class="record-row"
+                    >
+                      <mat-form-field>
+                        <input
+                          matInput
+                          [matDatepicker]="picker"
+                          formControlName="date"
+                          placeholder="DD/MM/YYYY"
+                        />
+                        <mat-datepicker-toggle
+                          matSuffix
+                          [for]="picker"
+                        ></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                      </mat-form-field>
+
+                      <mat-form-field>
+                        <input
+                          matInput
+                          type="number"
+                          formControlName="hour"
+                          min="0"
+                          max="23"
+                        />
+                      </mat-form-field>
+
+                      <mat-form-field>
+                        <input
+                          matInput
+                          type="number"
+                          formControlName="velocity"
+                        />
+                      </mat-form-field>
+
+                      <mat-form-field>
+                        <input
+                          matInput
+                          type="number"
+                          formControlName="direction"
+                          min="0"
+                          max="360"
+                        />
+                      </mat-form-field>
+
+                      <mat-form-field>
+                        <input matInput type="number" formControlName="sc" />
+                      </mat-form-field>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="removeRecord(i)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  mat-raised-button
+                  color="accent"
+                  type="button"
+                  (click)="addRecord()"
+                >
+                  Добавить запись
+                </button>
+                <button mat-raised-button color="primary" type="submit">
+                  Сохранить
+                </button>
+              </div>
+            </form>
+          </ng-container>
+          <p *ngIf="file !== 'point.dat' && file !== 'mettimeseries.dat'">
+            Содержимое файла {{ file }}
+          </p>
         </div>
       </mat-tab>
     </mat-tab-group>

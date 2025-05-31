@@ -7,12 +7,33 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatIconModule } from '@angular/material/icon';
 import {
   FormsModule,
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
+  FormArray,
 } from '@angular/forms';
+import {
+  DateAdapter,
+  MAT_DATE_FORMATS,
+  MAT_DATE_LOCALE,
+} from '@angular/material/core';
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'DD/MM/YYYY',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 interface PointDatModel {
   x: number;
@@ -33,6 +54,14 @@ interface PointDatModel {
   depConc: number;
 }
 
+interface MettseriesRecord {
+  date: string;
+  hour: number;
+  velocity: number;
+  direction: number;
+  sc: number;
+}
+
 @Component({
   selector: 'app-params-form',
   standalone: true,
@@ -45,10 +74,17 @@ interface PointDatModel {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatIconModule,
     FormsModule,
     ReactiveFormsModule,
   ],
-  providers: [HttpClient],
+  providers: [
+    HttpClient,
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'ru-RU' },
+  ],
   templateUrl: './params-form.component.html',
   styleUrls: ['./params-form.component.scss'],
 })
@@ -67,9 +103,15 @@ export class ParamsFormComponent implements OnInit {
   isDragOver = false;
   isModeling = false;
   pointDatForm: FormGroup;
+  mettseriesForm: FormGroup;
   sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
 
-  constructor(private http: HttpClient, private fb: FormBuilder) {
+  constructor(
+    private http: HttpClient,
+    private fb: FormBuilder,
+    private dateAdapter: DateAdapter<any>
+  ) {
+    this.dateAdapter.setLocale('ru-RU');
     this.pointDatForm = this.fb.group({
       x: [0],
       y: [0],
@@ -88,6 +130,29 @@ export class ParamsFormComponent implements OnInit {
       vDepMax: [0],
       depConc: [0],
     });
+
+    this.mettseriesForm = this.fb.group({
+      records: this.fb.array([]),
+    });
+  }
+
+  get records() {
+    return this.mettseriesForm.get('records') as FormArray;
+  }
+
+  addRecord() {
+    const record = this.fb.group({
+      date: [''],
+      hour: [0],
+      velocity: [0],
+      direction: [0],
+      sc: [0],
+    });
+    this.records.push(record);
+  }
+
+  removeRecord(index: number) {
+    this.records.removeAt(index);
   }
 
   ngOnInit() {}
@@ -190,6 +255,27 @@ export class ParamsFormComponent implements OnInit {
   onPointDatSubmit() {
     if (this.pointDatForm.valid) {
       console.log('Point.dat form submitted:', this.pointDatForm.value);
+      // Здесь будет логика отправки данных на сервер
+    }
+  }
+
+  onMettseriesSubmit() {
+    if (this.mettseriesForm.valid) {
+      const records = this.records.value.map((record: any) => {
+        const date = new Date(record.date);
+        return {
+          date: `${date.getDate().toString().padStart(2, '0')}.${(
+            date.getMonth() + 1
+          )
+            .toString()
+            .padStart(2, '0')}`,
+          hour: record.hour,
+          velocity: record.velocity,
+          direction: record.direction,
+          sc: record.sc,
+        };
+      });
+      console.log('Mettseries form submitted:', records);
       // Здесь будет логика отправки данных на сервер
     }
   }
