@@ -141,6 +141,7 @@ export class ParamsFormComponent implements OnInit {
     'Unknown',
     'Bioaerosols',
   ];
+  isSimulationEnabled = false;
 
   constructor(
     private http: HttpClient,
@@ -275,13 +276,7 @@ export class ParamsFormComponent implements OnInit {
   onModeling() {
     if (!this.isModeling) {
       // Запуск моделирования
-      const inputFile = this.files.find(
-        (f) => f.name.toLowerCase() === 'in.dat'
-      );
-      if (!inputFile) {
-        alert('Не найден обязательный файл in.dat!');
-        return;
-      }
+
       this.isModeling = true;
       this.http
         .post('https://localhost:44373/api/gral/run', {
@@ -400,7 +395,7 @@ export class ParamsFormComponent implements OnInit {
     }
   }
 
-  saveAllFiles() {
+  async saveAllFiles() {
     if (
       this.pointDatForm.valid &&
       this.mettseriesForm.valid &&
@@ -429,30 +424,40 @@ export class ParamsFormComponent implements OnInit {
         pollutant: this.pollutantForm.value,
       };
 
-      this.computationService.saveAllFiles(data).subscribe({
-        next: () => {
-          this.snackBar.open('Все файлы успешно сохранены', 'OK', {
-            duration: 3000,
-          });
-        },
-        error: (error) => {
-          this.snackBar.open(
-            'Ошибка при сохранении файлов: ' + error.message,
-            'OK',
-            { duration: 5000 }
-          );
-        },
-      });
+      try {
+        this.computationService.saveAllFiles(data).subscribe({
+          next: () => {
+            this.isSimulationEnabled = true;
+            this.snackBar.open('Все файлы успешно сохранены', 'OK', {
+              duration: 3000,
+            });
+          },
+          error: (error) => {
+            this.isSimulationEnabled = false;
+            this.snackBar.open(
+              'Ошибка при сохранении файлов: ' + error.message,
+              'OK',
+              { duration: 5000 }
+            );
+          },
+        });
+      } catch (error: any) {
+        this.snackBar.open(
+          'Ошибка при сохранении файлов: ' + error.message,
+          'OK',
+          { duration: 5000 }
+        );
+      }
     } else {
       this.snackBar.open('Пожалуйста, заполните все формы корректно', 'OK', {
-        duration: 5000,
+        duration: 3000,
       });
     }
   }
 
   initPollutantForm() {
     this.pollutantForm = this.fb.group({
-      name: [this.pollutants[0], Validators.required],
+      name: [this.pollutants[11], Validators.required],
       type: [1, Validators.required],
       density: [0, [Validators.required, Validators.min(0)]],
       diameter: [0, [Validators.required, Validators.min(0)]],

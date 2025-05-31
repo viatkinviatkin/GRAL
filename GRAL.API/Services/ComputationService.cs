@@ -14,6 +14,7 @@ namespace GRAL.API.Services
         Task SaveGralGebAsync(GralGebModel model);
         Task SavePollutantAsync(PollutantModel model);
         Task SaveAllFilesAsync(SaveAllFilesModel model);
+        bool AreFilesSaved { get; }
     }
 
     public class ComputationService : IComputationService
@@ -29,6 +30,9 @@ namespace GRAL.API.Services
             "Max_Proc.txt",
             "meteopgt.all"
         };
+        private bool _areFilesSaved;
+
+        public bool AreFilesSaved => _areFilesSaved;
 
         public ComputationService()
         {
@@ -122,10 +126,10 @@ namespace GRAL.API.Services
             var content = new StringBuilder();
             content.AppendLine($"{model.CellSizeX,-16} !cell-size for cartesian wind field in GRAL in x-direction");
             content.AppendLine($"{model.CellSizeY,-16} !cell-size for cartesian wind field in GRAL in y-direction");
-            content.AppendLine($"{model.CellSizeZ},{model.StretchingFactor:F2,-14} !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
-            content.AppendLine($"{model.CellCountX,-16} !number of cells for counting grid in GRAL in x-direction");
-            content.AppendLine($"{model.CellCountY,-16} !number of cells for counting grid in GRAL in y-direction");
-            content.AppendLine($"{model.HorizontalSlices,-16} !Number of horizontal slices");
+            content.AppendLine($"2,1.01  !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
+            content.AppendLine($"{(model.WestBorder - model.EastBorder)/10,-16} !number of cells for counting grid in GRAL in x-direction");
+            content.AppendLine($"{(model.NorthBorder - model.SouthBorder)/10 ,-16} !number of cells for counting grid in GRAL in y-direction");
+            content.AppendLine($"{1,-16} !Number of horizontal slices");
             content.AppendLine($"{model.SourceGroups},  !Source groups to be computed seperated by a comma");
             content.AppendLine($"{model.WestBorder,-16} !West border of GRAL model domain [m]");
             content.AppendLine($"{model.EastBorder,-16} !East border of GRAL model domain [m]");
@@ -155,6 +159,7 @@ namespace GRAL.API.Services
             await SaveMettseriesAsync(model.Mettseries);
             await SaveGralGebAsync(model.GralGeb);
             await SavePollutantAsync(model.Pollutant);
+            _areFilesSaved = true;
         }
     }
 } 

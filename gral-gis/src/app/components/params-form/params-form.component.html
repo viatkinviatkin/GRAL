@@ -50,7 +50,7 @@
       mat-raised-button
       [color]="isModeling ? 'warn' : 'accent'"
       (click)="onModeling()"
-      [disabled]="!!error || files.length === 0"
+      [disabled]="!isSimulationEnabled && (!!error || files.length === 0)"
     >
       {{ isModeling ? "Остановить моделирование" : "Запустить моделирование" }}
     </button>
