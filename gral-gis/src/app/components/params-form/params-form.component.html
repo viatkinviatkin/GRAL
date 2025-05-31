@@ -424,11 +424,84 @@
               </button>
             </form>
           </ng-container>
+          <ng-container *ngIf="file === 'Pollutant.txt'">
+            <form [formGroup]="pollutantForm" (ngSubmit)="onPollutantSubmit()">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>
+                    Загрязнитель
+                    <mat-icon
+                      matTooltip="Выберите тип загрязнителя"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <mat-select formControlName="pollutant">
+                    <mat-option
+                      *ngFor="let pollutant of pollutants"
+                      [value]="pollutant"
+                    >
+                      {{ pollutant }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Wet deposition cW setting
+                    <mat-icon
+                      matTooltip="Настройка влажного осаждения cW"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="wetDepositionCW"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Wet deposition alphaW setting
+                    <mat-icon
+                      matTooltip="Настройка влажного осаждения alphaW"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="wetDepositionAlphaW"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
+                    Decay rate
+                    <mat-icon
+                      matTooltip="Скорость распада для всех групп источников"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="decayRate" />
+                </mat-form-field>
+              </div>
+
+              <button mat-raised-button color="primary" type="submit">
+                Сохранить
+              </button>
+            </form>
+          </ng-container>
           <p
             *ngIf="
               file !== 'point.dat' &&
               file !== 'mettimeseries.dat' &&
-              file !== 'GRAL.geb'
+              file !== 'GRAL.geb' &&
+              file !== 'Pollutant.txt'
             "
           >
             Содержимое файла {{ file }}

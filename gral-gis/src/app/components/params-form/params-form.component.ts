@@ -96,11 +96,14 @@ export class ParamsFormComponent implements OnInit {
     'point.dat',
     'GRAL.geb',
     'mettimeseries.dat',
-    'in.dat',
-    'meteopgt.all',
+    'Pollutant.txt',
 
-    'emissions001.dat',
-    'GRAMMin.dat',
+    //'meteopgt.all',
+    //'DispNr.txt',
+    //'emissions001.dat',
+    //'GRAMMin.dat',
+    //'in.dat',
+    // Max_Proc.txt
   ];
   files: File[] = [];
   error: string | null = null;
@@ -110,6 +113,33 @@ export class ParamsFormComponent implements OnInit {
   mettseriesForm: FormGroup;
   sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
   gralGebForm: FormGroup;
+  pollutantForm: FormGroup;
+  pollutants = [
+    'NOx',
+    'PM10',
+    'Odour',
+    'SO2',
+    'PM2.5',
+    'NH3',
+    'NO2',
+    'NMVOC',
+    'HC',
+    'HF',
+    'HCl',
+    'H2S',
+    'F',
+    'CO',
+    'BaP',
+    'Pb',
+    'Cd',
+    'Ni',
+    'As',
+    'Hg',
+    'Tl',
+    'TCE',
+    'Unknown',
+    'Bioaerosols',
+  ];
 
   constructor(
     private http: HttpClient,
@@ -153,6 +183,13 @@ export class ParamsFormComponent implements OnInit {
       eastBorder: [650, [Validators.required]],
       southBorder: [-380, [Validators.required]],
       northBorder: [-280, [Validators.required]],
+    });
+
+    this.pollutantForm = this.fb.group({
+      pollutant: ['NOx', [Validators.required]],
+      wetDepositionCW: [0, [Validators.required]],
+      wetDepositionAlphaW: [0, [Validators.required]],
+      decayRate: [0, [Validators.required]],
     });
   }
 
@@ -316,6 +353,19 @@ ${formData.southBorder}                !South border of GRAL model domain [m]
 ${formData.northBorder}                !North border of GRAL model domain [m]`;
 
       console.log('Gral.geb form submitted:', content);
+      // Здесь будет логика отправки данных на сервер
+    }
+  }
+
+  onPollutantSubmit() {
+    if (this.pollutantForm.valid) {
+      const formData = this.pollutantForm.value;
+      const content = `${formData.pollutant}
+${formData.wetDepositionCW}\t ! Wet deposition cW setting
+${formData.wetDepositionAlphaW}\t ! Wet deposition alphaW setting
+${formData.decayRate}\t ! Decay rate for all source groups`;
+
+      console.log('Pollutant form submitted:', content);
       // Здесь будет логика отправки данных на сервер
     }
   }
