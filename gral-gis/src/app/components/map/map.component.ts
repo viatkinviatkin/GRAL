@@ -1,4 +1,4 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
 import * as L from 'leaflet';
 import 'leaflet.heat';
 import 'leaflet-draw';
@@ -7,6 +7,8 @@ import { MapExportService } from './map-export.service';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { MapService } from '../../services/map.service';
+import { environment } from '../../../environments/environment';
+import { Subscription } from 'rxjs';
 // import 'leaflet-history'; // если появится npm-пакет или подключить вручную
 
 // Исправляем пути к маркерам Leaflet
@@ -19,20 +21,32 @@ import { MapService } from '../../services/map.service';
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss'],
 })
-export class MapComponent implements AfterViewInit {
+export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   private map!: L.Map;
   private drawnItems = new L.FeatureGroup();
   private easyPrintControl: any;
   drawControl: any;
+  private heatLayers: any[] = [];
+  private subscription: Subscription;
 
   constructor(
     private mapExportService: MapExportService,
     private http: HttpClient,
     private mapService: MapService
-  ) {}
+  ) {
+    this.subscription = this.mapService.markerCoordinates$.subscribe(
+      (coords) => {
+        if (coords) {
+          this.addMarker(coords);
+        }
+      }
+    );
+  }
+
   ngOnInit(): void {
     L.Icon.Default.imagePath = 'assets/leaflet/';
   }
+
   ngAfterViewInit(): void {
     this.map = L.map('map', {
       center: [52.58181587791204, 39.53921411100283],
@@ -48,7 +62,13 @@ export class MapComponent implements AfterViewInit {
       }
     ).addTo(this.map);
 
-    this.loadHeatData();
+    this.mapService.resultIsReady$.subscribe((ready) => {
+      if (!ready) {
+        return;
+      }
+
+      this.loadResults('./computation');
+    });
     this.map.addLayer(this.drawnItems);
 
     this.drawControl = new (L.Control as any).Draw({
@@ -106,7 +126,7 @@ export class MapComponent implements AfterViewInit {
       this.mapService.setMarkerCoordinates(null);
       this.mapService.setDomainCoordinates(null);
     });
-
+    this.mapService.resultIsReady.next(true);
     // Пример heat layer
     const heat = (L as any)
       .heatLayer(
@@ -140,17 +160,66 @@ export class MapComponent implements AfterViewInit {
     // historyLayer.addTo(this.map);
   }
 
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+    if (this.map) {
+      this.map.remove();
+    }
+  }
+
   loadHeatData(): void {
-    this.http.get('assets/heatmap_data.json').subscribe((data: any) => {
-      (L as any)
-        .heatLayer(data, {
-          radius: 5, // Половина размера ячейки (5м для cell=10)
-          blur: 1, // Лёгкое размытие краёв
-          //maxZoom: 18,
-          minOpacity: 0.5, // Уменьшает "просвечивание"
-          gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' }, // Кастомизация
-        })
-        .addTo(this.map);
+    this.http.get('assets/heatmap_data.json').subscribe((data: any) => {});
+  }
+
+  private addMarker(coords: { x: number; y: number }) {
+    L.marker([coords.y, coords.x]).addTo(this.map);
+  }
+
+  async loadResults(computationPath: string) {
+    try {
+      // Получаем список файлов результатов
+      const resultFiles = await this.http
+        .get<any[]>(
+          `${environment.apiUrl}/api/gral/results?computationPath=${computationPath}`
+        )
+        .toPromise();
+
+      if (!resultFiles || resultFiles.length === 0) {
+        console.log('No result files found');
+        return;
+      }
+
+      // Загружаем и отображаем каждый файл
+      for (const file of resultFiles) {
+        const resultData = await this.http
+          .get<any>(
+            `${environment.apiUrl}/api/gral/result/${file.fileName}?computationPath=${computationPath}`
+          )
+          .toPromise();
+
+        if (!resultData) {
+          continue;
+        }
+        // Отправляем данные для отображения на карте
+        (L as any)
+          .heatLayer(resultData, {
+            radius: 10, // Половина размера ячейки (5м для cell=10)
+            blur: 1, // Лёгкое размытие краёв
+            //maxZoom: 18,
+            minOpacity: 0.5, // Уменьшает "просвечивание"
+            gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' }, // Кастомизация
+          })
+          .addTo(this.map);
+      }
+    } catch (error) {
+      console.error('Error loading results:', error);
+    }
+  }
+
+  private clearHeatLayers() {
+    this.heatLayers.forEach((layer) => {
+      this.map.removeLayer(layer);
     });
+    this.heatLayers = [];
   }
 }

@@ -32,8 +32,7 @@ namespace GRAL.API.Services
 
         public async Task TransformRastersAsync(string computationPath)
         {
-            var rasterFiles = Directory.GetFiles(_computationPath, "*-101.txt")
-                .Where(f => !f.EndsWith("_4326.txt")); // Исключаем уже преобразованные файлы
+            var rasterFiles = Directory.GetFiles(_computationPath, "*-101.txt");
 
             foreach (var rasterFile in rasterFiles)
             {
@@ -96,7 +95,7 @@ namespace GRAL.API.Services
                 }
 
                 // Сохраняем результат
-                var outputPath = Path.ChangeExtension(filePath, "_4326.json");
+                var outputPath = Path.ChangeExtension(filePath, "result_4326.geojson");
                 var json = JsonSerializer.Serialize(heatData, new JsonSerializerOptions
                 {
                     WriteIndented = true

@@ -26,7 +26,7 @@ import {
 } from '@angular/material/core';
 import { ComputationService } from '../../services/computation.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MapService, MarkerCoordinates } from '../../services/map.service';
+import { MapService } from '../../services/map.service';
 import { Subject, interval, Subscription } from 'rxjs';
 import { takeUntil, switchMap, takeWhile } from 'rxjs/operators';
 
@@ -177,7 +177,22 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
     });
 
     this.mettseriesForm = this.fb.group({
-      records: this.fb.array([]),
+      records: this.fb.array([
+        this.fb.group({
+          date: ['2025-05-31T19:00:00.000Z'],
+          hour: [1],
+          velocity: [3],
+          direction: [136],
+          sc: [4],
+        }),
+        this.fb.group({
+          date: ['2025-05-31T19:00:00.000Z'],
+          hour: [2],
+          velocity: [7],
+          direction: [135],
+          sc: [5],
+        }),
+      ]),
     });
 
     this.gralGebForm = this.fb.group({
@@ -370,6 +385,11 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
             this.isModeling = false;
             this.stopStatusPolling();
             this.snackBar.open(status, 'OK', { duration: 3000 });
+
+            // Загружаем результаты после успешного завершения
+            if (status === 'Simulation completed successfully') {
+              this.mapService.resultIsReady.next(true);
+            }
           }
         },
         error: (error) => {

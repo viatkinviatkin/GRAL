@@ -8,6 +8,7 @@ using ProgramGralCore = GRAL_2001.Program;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using GRAL.API.Services;
+using System.Linq;
 
 namespace GRAL.API.Controllers
 {
@@ -189,6 +190,59 @@ namespace GRAL.API.Controllers
         {
             // TODO: Реализовать конфигурацию
             return Ok(new { message = "Configuration updated" });
+        }
+
+        [HttpGet("results")]
+        public IActionResult GetResults([FromQuery] string computationPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(computationPath))
+                {
+                    return BadRequest(new { message = "Computation path is required" });
+                }
+
+                var resultFiles = Directory.GetFiles(computationPath, "*.result_4326.geojson")
+                    .Select(f => new
+                    {
+                        fileName = Path.GetFileName(f),
+                        filePath = f
+                    })
+                    .ToList();
+
+                return Ok(resultFiles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting result files");
+                return StatusCode(500, new { message = "Failed to get result files", error = ex.Message });
+            }
+        }
+
+        [HttpGet("result/{fileName}")]
+        public IActionResult GetResultFile([FromQuery] string computationPath, string fileName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(computationPath) || string.IsNullOrEmpty(fileName))
+                {
+                    return BadRequest(new { message = "Computation path and file name are required" });
+                }
+
+                var filePath = Path.Combine(computationPath, fileName);
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound(new { message = "Result file not found" });
+                }
+
+                var fileContent = System.IO.File.ReadAllText(filePath);
+                return Ok(fileContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading result file");
+                return StatusCode(500, new { message = "Failed to read result file", error = ex.Message });
+            }
         }
 
         private void UpdateStatus(string status)

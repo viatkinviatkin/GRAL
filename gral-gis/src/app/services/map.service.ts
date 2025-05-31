@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import proj4 from 'proj4';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface MarkerCoordinates {
   x: number;
@@ -21,7 +23,9 @@ export class MapService {
   private markerCoordinates = new BehaviorSubject<MarkerCoordinates | null>(
     null
   );
+  resultIsReady = new BehaviorSubject<any>(false);
   markerCoordinates$ = this.markerCoordinates.asObservable();
+  resultIsReady$ = this.resultIsReady.asObservable();
 
   private domainCoordinates = new BehaviorSubject<DomainCoordinates | null>(
     null
@@ -31,6 +35,8 @@ export class MapService {
   // Определяем проекции
   private readonly wgs84 = 'EPSG:4326';
   private readonly webMercator = 'EPSG:3857';
+
+  constructor(private http: HttpClient) {}
 
   setMarkerCoordinates(coordinates: MarkerCoordinates | null) {
     if (coordinates) {
