@@ -48,6 +48,7 @@ export class MapComponent implements AfterViewInit {
       }
     ).addTo(this.map);
 
+    this.loadHeatData();
     this.map.addLayer(this.drawnItems);
 
     this.drawControl = new (L.Control as any).Draw({
@@ -140,10 +141,15 @@ export class MapComponent implements AfterViewInit {
   }
 
   loadHeatData(): void {
-    this.http.get('assets/data.json').subscribe((data: any) => {
-      const heatData = JSON.parse(JSON.stringify(data));
-      const heat = (L as any)
-        .heatLayer(heatData, { radius: 8, maxZoom: 15, max: 240 })
+    this.http.get('assets/heatmap_data.json').subscribe((data: any) => {
+      (L as any)
+        .heatLayer(data, {
+          radius: 5, // Половина размера ячейки (5м для cell=10)
+          blur: 1, // Лёгкое размытие краёв
+          //maxZoom: 18,
+          minOpacity: 0.5, // Уменьшает "просвечивание"
+          gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' }, // Кастомизация
+        })
         .addTo(this.map);
     });
   }

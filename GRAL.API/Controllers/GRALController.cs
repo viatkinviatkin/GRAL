@@ -5,7 +5,9 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using ProgramGralCore = GRAL_2001.Program;
-
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using GRAL.API.Services;
 
 namespace GRAL.API.Controllers
 {
@@ -14,16 +16,25 @@ namespace GRAL.API.Controllers
     public class GRALController : ControllerBase
     {
         private readonly ILogger<GRALController> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly ITransformService _transformService;
         private static Process? _gralProcess;
         private static string _currentStatus = "Idle";
         private static readonly object _statusLock = new object();
         private static readonly string _gralExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GRAL.exe");
         private static CancellationTokenSource? _logReaderCts;
         private static Task? _logReaderTask;
+        private StreamReader? _logReader;
+        private bool _isLogReaderRunning;
 
-        public GRALController(ILogger<GRALController> logger)
+        public GRALController(
+            ILogger<GRALController> logger,
+            IConfiguration configuration,
+            ITransformService transformService)
         {
             _logger = logger;
+            _configuration = configuration;
+            _transformService = transformService;
         }
 
         [HttpPost("run")]
@@ -89,7 +100,7 @@ namespace GRAL.API.Controllers
                 StartLogReader(outputDir);
 
                 // Запускаем задачу для отслеживания завершения процесса
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -108,12 +119,22 @@ namespace GRAL.API.Controllers
                             else
                             {
                                 UpdateStatus("Simulation completed successfully");
+                                try
+                                {
+                                    // Трансформируем растры после успешного завершения
+                                    await _transformService.TransformRastersAsync(process.StartInfo.Arguments);
+                                }
+                                catch (Exception transformex)
+                                {
+                                    _logger.LogError(transformex, "Ошибка при обработке выходных файлов");
+                                }
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         UpdateStatus($"Error monitoring process: {ex.Message}");
+                     
                     }
                     finally
                     {

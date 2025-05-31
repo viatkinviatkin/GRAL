@@ -127,8 +127,8 @@ namespace GRAL.API.Services
             content.AppendLine($"{model.CellSizeX,-16} !cell-size for cartesian wind field in GRAL in x-direction");
             content.AppendLine($"{model.CellSizeY,-16} !cell-size for cartesian wind field in GRAL in y-direction");
             content.AppendLine($"2,1.01  !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
-            content.AppendLine($"{Math.Abs(model.WestBorder - model.EastBorder)/10,-16} !number of cells for counting grid in GRAL in x-direction");
-            content.AppendLine($"{Math.Abs(model.NorthBorder - model.SouthBorder)/10 ,-16} !number of cells for counting grid in GRAL in y-direction");
+            content.AppendLine($"{(int)Math.Abs(model.WestBorder - model.EastBorder)/10} !number of cells for counting grid in GRAL in x-direction");
+            content.AppendLine($"{(int)Math.Abs(model.NorthBorder - model.SouthBorder)/10} !number of cells for counting grid in GRAL in y-direction");
             content.AppendLine($"{1,-16} !Number of horizontal slices");
             content.AppendLine($"{model.SourceGroups},  !Source groups to be computed seperated by a comma");
             content.AppendLine($"{model.WestBorder,-16} !West border of GRAL model domain [m]");

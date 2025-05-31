@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import proj4 from 'proj4';
 
 export interface MarkerCoordinates {
   x: number;
@@ -27,11 +28,44 @@ export class MapService {
   );
   domainCoordinates$ = this.domainCoordinates.asObservable();
 
+  // Определяем проекции
+  private readonly wgs84 = 'EPSG:4326';
+  private readonly webMercator = 'EPSG:3857';
+
   setMarkerCoordinates(coordinates: MarkerCoordinates | null) {
-    this.markerCoordinates.next(coordinates);
+    if (coordinates) {
+      // Преобразуем координаты из WGS84 в Web Mercator
+      const [x, y] = proj4(this.wgs84, this.webMercator, [
+        coordinates.x,
+        coordinates.y,
+      ]);
+
+      this.markerCoordinates.next({ x, y });
+    } else {
+      this.markerCoordinates.next(null);
+    }
   }
 
   setDomainCoordinates(coordinates: DomainCoordinates | null) {
-    this.domainCoordinates.next(coordinates);
+    if (coordinates) {
+      // Преобразуем все границы из WGS84 в Web Mercator
+      const [west, south] = proj4(this.wgs84, this.webMercator, [
+        coordinates.westBorder,
+        coordinates.southBorder,
+      ]);
+      const [east, north] = proj4(this.wgs84, this.webMercator, [
+        coordinates.eastBorder,
+        coordinates.northBorder,
+      ]);
+
+      this.domainCoordinates.next({
+        westBorder: west,
+        eastBorder: east,
+        southBorder: south,
+        northBorder: north,
+      });
+    } else {
+      this.domainCoordinates.next(null);
+    }
   }
 }
