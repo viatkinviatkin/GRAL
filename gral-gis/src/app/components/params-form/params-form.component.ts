@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -24,6 +24,8 @@ import {
   MAT_DATE_FORMATS,
   MAT_DATE_LOCALE,
 } from '@angular/material/core';
+import { ComputationService } from '../../services/computation.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -71,7 +73,6 @@ interface MettseriesRecord {
     CommonModule,
     MatCardModule,
     MatButtonModule,
-    HttpClientModule,
     MatTabsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -82,9 +83,9 @@ interface MettseriesRecord {
     MatTooltipModule,
     FormsModule,
     ReactiveFormsModule,
+    MatSnackBarModule,
   ],
   providers: [
-    HttpClient,
     { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
     { provide: MAT_DATE_LOCALE, useValue: 'ru-RU' },
   ],
@@ -144,7 +145,9 @@ export class ParamsFormComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
-    private dateAdapter: DateAdapter<any>
+    private dateAdapter: DateAdapter<any>,
+    private computationService: ComputationService,
+    private snackBar: MatSnackBar
   ) {
     this.dateAdapter.setLocale('ru-RU');
     this.pointDatForm = this.fb.group({
@@ -311,8 +314,20 @@ export class ParamsFormComponent implements OnInit {
 
   onPointDatSubmit() {
     if (this.pointDatForm.valid) {
-      console.log('Point.dat form submitted:', this.pointDatForm.value);
-      // Здесь будет логика отправки данных на сервер
+      this.computationService.savePointDat(this.pointDatForm.value).subscribe({
+        next: () => {
+          this.snackBar.open('Файл point.dat успешно сохранен', 'OK', {
+            duration: 3000,
+          });
+        },
+        error: (error) => {
+          this.snackBar.open(
+            'Ошибка при сохранении point.dat: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
+        },
+      });
     }
   }
 
@@ -332,41 +347,111 @@ export class ParamsFormComponent implements OnInit {
           sc: record.sc,
         };
       });
-      console.log('Mettseries form submitted:', records);
-      // Здесь будет логика отправки данных на сервер
+
+      this.computationService.saveMettseries(records).subscribe({
+        next: () => {
+          this.snackBar.open('Файл mettimeseries.dat успешно сохранен', 'OK', {
+            duration: 3000,
+          });
+        },
+        error: (error) => {
+          this.snackBar.open(
+            'Ошибка при сохранении mettimeseries.dat: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
+        },
+      });
     }
   }
 
   onGralGebSubmit() {
     if (this.gralGebForm.valid) {
-      const formData = this.gralGebForm.value;
-      const content = `${formData.cellSizeX}               !cell-size for cartesian wind field in GRAL in x-direction
-${formData.cellSizeY}               !cell-size for cartesian wind field in GRAL in y-direction
-${formData.cellSizeZ},${formData.cellSizeZStretch}                !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height
-${formData.cellsCountX}                !number of cells for counting grid in GRAL in x-direction
-${formData.cellsCountY}                !number of cells for counting grid in GRAL in y-direction
-${formData.horizontalSlices}                !Number of horizontal slices
-${formData.sourceGroups},                !Source groups to be computed seperated by a comma
-${formData.westBorder}                !West border of GRAL model domain [m]
-${formData.eastBorder}                !East border of GRAL model domain [m]
-${formData.southBorder}                !South border of GRAL model domain [m]
-${formData.northBorder}                !North border of GRAL model domain [m]`;
-
-      console.log('Gral.geb form submitted:', content);
-      // Здесь будет логика отправки данных на сервер
+      this.computationService.saveGralGeb(this.gralGebForm.value).subscribe({
+        next: () => {
+          this.snackBar.open('Файл GRAL.geb успешно сохранен', 'OK', {
+            duration: 3000,
+          });
+        },
+        error: (error) => {
+          this.snackBar.open(
+            'Ошибка при сохранении GRAL.geb: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
+        },
+      });
     }
   }
 
   onPollutantSubmit() {
     if (this.pollutantForm.valid) {
-      const formData = this.pollutantForm.value;
-      const content = `${formData.pollutant}
-${formData.wetDepositionCW}\t ! Wet deposition cW setting
-${formData.wetDepositionAlphaW}\t ! Wet deposition alphaW setting
-${formData.decayRate}\t ! Decay rate for all source groups`;
+      this.computationService
+        .savePollutant(this.pollutantForm.value)
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Файл Pollutant.txt успешно сохранен', 'OK', {
+              duration: 3000,
+            });
+          },
+          error: (error) => {
+            this.snackBar.open(
+              'Ошибка при сохранении Pollutant.txt: ' + error.message,
+              'OK',
+              { duration: 5000 }
+            );
+          },
+        });
+    }
+  }
 
-      console.log('Pollutant form submitted:', content);
-      // Здесь будет логика отправки данных на сервер
+  saveAllFiles() {
+    if (
+      this.pointDatForm.valid &&
+      this.mettseriesForm.valid &&
+      this.gralGebForm.valid &&
+      this.pollutantForm.valid
+    ) {
+      const records = this.records.value.map((record: any) => {
+        const date = new Date(record.date);
+        return {
+          date: `${date.getDate().toString().padStart(2, '0')}.${(
+            date.getMonth() + 1
+          )
+            .toString()
+            .padStart(2, '0')}`,
+          hour: record.hour,
+          velocity: record.velocity,
+          direction: record.direction,
+          sc: record.sc,
+        };
+      });
+
+      const data = {
+        pointDat: this.pointDatForm.value,
+        mettseries: records,
+        gralGeb: this.gralGebForm.value,
+        pollutant: this.pollutantForm.value,
+      };
+
+      this.computationService.saveAllFiles(data).subscribe({
+        next: () => {
+          this.snackBar.open('Все файлы успешно сохранены', 'OK', {
+            duration: 3000,
+          });
+        },
+        error: (error) => {
+          this.snackBar.open(
+            'Ошибка при сохранении файлов: ' + error.message,
+            'OK',
+            { duration: 5000 }
+          );
+        },
+      });
+    } else {
+      this.snackBar.open('Пожалуйста, заполните все формы корректно', 'OK', {
+        duration: 5000,
+      });
     }
   }
 }

@@ -1,47 +1,89 @@
 using Microsoft.AspNetCore.Mvc;
+using GRAL.API.Services;
+using GRAL.API.Models;
+
 
 namespace GRAL.API.Controllers
 {
     [ApiController]
-    [Route("api/computation")]
+    [Route("api/[controller]")]
     public class ComputationController : ControllerBase
     {
-        private readonly string _computationPath = Directory.GetCurrentDirectory() + "./computation";
+        private readonly IComputationService _computationService;
 
-        [HttpGet("files")]
-        public IActionResult GetFiles()
+        public ComputationController(IComputationService computationService)
         {
-            if (!Directory.Exists(_computationPath))
-                return NotFound("Computation folder not found");
-            var files = Directory.GetFiles(_computationPath)
-                .Select(Path.GetFileName)
-                .ToArray();
-            return Ok(files);
+            _computationService = computationService;
         }
 
-        [HttpGet("download/{fileName}")]
-        public IActionResult DownloadFile(string fileName)
+        [HttpPost("point-dat")]
+        public async Task<IActionResult> SavePointDat([FromBody] PointDatModel model)
         {
-            var filePath = Path.Combine(_computationPath, fileName);
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-            var contentType = "application/octet-stream";
-            return PhysicalFile(filePath, contentType, fileName);
-        }
-
-        [HttpPost("upload")]
-        public async Task<IActionResult> UploadFiles([FromForm] List<IFormFile> files)
-        {
-            if (!Directory.Exists(_computationPath))
-                Directory.CreateDirectory(_computationPath);
-
-            foreach (var file in files)
+            try
             {
-                var filePath = Path.Combine(_computationPath, file.FileName);
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await file.CopyToAsync(stream);
+                await _computationService.SavePointDatAsync(model);
+                return Ok(new { message = "Файл point.dat успешно сохранен" });
             }
-            return Ok();
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("mettimeseries")]
+        public async Task<IActionResult> SaveMettseries([FromBody] List<MettseriesRecord> records)
+        {
+            try
+            {
+                await _computationService.SaveMettseriesAsync(records);
+                return Ok(new { message = "Файл mettimeseries.dat успешно сохранен" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("gral-geb")]
+        public async Task<IActionResult> SaveGralGeb([FromBody] GralGebModel model)
+        {
+            try
+            {
+                await _computationService.SaveGralGebAsync(model);
+                return Ok(new { message = "Файл GRAL.geb успешно сохранен" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("pollutant")]
+        public async Task<IActionResult> SavePollutant([FromBody] PollutantModel model)
+        {
+            try
+            {
+                await _computationService.SavePollutantAsync(model);
+                return Ok(new { message = "Файл Pollutant.txt успешно сохранен" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("save-all")]
+        public async Task<IActionResult> SaveAllFiles([FromBody] SaveAllFilesModel model)
+        {
+            try
+            {
+                await _computationService.SaveAllFilesAsync(model);
+                return Ok(new { message = "Все файлы успешно сохранены" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
     }
 } 

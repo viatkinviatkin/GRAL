@@ -37,24 +37,37 @@
     </div>
     <div *ngIf="error" style="color: red; margin-top: 8px">{{ error }}</div>
   </div>
-  <button
-    mat-raised-button
-    color="primary"
-    (click)="onSendFiles()"
-    [disabled]="files.length === 0"
-    style="margin-top: 16px"
-  >
-    Отправить файлы
-  </button>
-  <button
-    mat-raised-button
-    [color]="isModeling ? 'warn' : 'accent'"
-    (click)="onModeling()"
-    [disabled]="!!error || files.length === 0"
-    style="margin-top: 16px"
-  >
-    {{ isModeling ? "Остановить моделирование" : "Запустить моделирование" }}
-  </button>
+  <div class="form-actions" style="margin-top: 16px">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSendFiles()"
+      [disabled]="files.length === 0"
+    >
+      Отправить файлы
+    </button>
+    <button
+      mat-raised-button
+      [color]="isModeling ? 'warn' : 'accent'"
+      (click)="onModeling()"
+      [disabled]="!!error || files.length === 0"
+    >
+      {{ isModeling ? "Остановить моделирование" : "Запустить моделирование" }}
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="saveAllFiles()"
+      [disabled]="
+        !pointDatForm.valid ||
+        !mettseriesForm.valid ||
+        !gralGebForm.valid ||
+        !pollutantForm.valid
+      "
+    >
+      Сохранить все файлы
+    </button>
+  </div>
 </mat-card>
 
 <mat-card>
