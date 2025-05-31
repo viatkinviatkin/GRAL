@@ -2,16 +2,22 @@ namespace GRAL.API.Models
 {
     public class PointDatModel
     {
-        public int SourceCount { get; set; }
-        public int SourceType { get; set; }
-        public double SourceHeight { get; set; }
-        public double SourceWidth { get; set; }
-        public double SourceLength { get; set; }
-        public double SourceAngle { get; set; }
-        public double SourceX { get; set; }
-        public double SourceY { get; set; }
-        public double SourceZ { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
         public double SourceEmission { get; set; }
+        public double ExitVelocity { get; set; }
+        public double Diameter { get; set; }
+        public double Temperature { get; set; }
+        public string SourceGroup { get; set; }
+        public double F25 { get; set; }
+        public double F10 { get; set; }
+        public double DiaMax { get; set; }
+        public double Density { get; set; }
+        public double VDep25 { get; set; }
+        public double VDep10 { get; set; }
+        public double VDepMax { get; set; }
+        public double DepConc { get; set; }
     }
 
     public class MettseriesRecord

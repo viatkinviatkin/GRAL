@@ -64,16 +64,9 @@ namespace GRAL.API.Services
         {
             await EnsureDefaultFilesExist();
             var content = new StringBuilder();
-            content.AppendLine($"{model.SourceCount} !Number of sources");
-            content.AppendLine($"{model.SourceType} !Source type (1=point, 2=line, 3=area)");
-            content.AppendLine($"{model.SourceHeight:F2} !Source height [m]");
-            content.AppendLine($"{model.SourceWidth:F2} !Source width [m]");
-            content.AppendLine($"{model.SourceLength:F2} !Source length [m]");
-            content.AppendLine($"{model.SourceAngle:F2} !Source angle [°]");
-            content.AppendLine($"{model.SourceX:F2} !Source x-coordinate [m]");
-            content.AppendLine($"{model.SourceY:F2} !Source y-coordinate [m]");
-            content.AppendLine($"{model.SourceZ:F2} !Source z-coordinate [m]");
-            content.AppendLine($"{model.SourceEmission:F2} !Source emission [g/s]");
+            content.AppendLine("Generated: V2019");
+            content.AppendLine("x,y,z,H2S[kg/h],--,--,--,exit vel.[m/s],diameter[m],Temp.[K],Source group,deposition parameters F2.5, F10,DiaMax,Density,VDep2.5,VDep10,VDepMax,Dep_Conc");
+            content.AppendLine($"{model.X},{model.Y},{model.Z},{model.SourceEmission},0,0,0,{model.ExitVelocity},{model.Diameter},{model.Temperature},{model.SourceGroup},{model.F25},{model.F10},{model.DiaMax},{model.Density},{model.VDep25},{model.VDep10},{model.VDepMax},{model.DepConc}");
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "point.dat"), content.ToString());
         }
