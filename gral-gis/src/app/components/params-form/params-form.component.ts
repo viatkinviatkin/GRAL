@@ -1,18 +1,25 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { MatTabsModule } from '@angular/material/tabs';
 
 @Component({
   selector: 'app-params-form',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, HttpClientModule],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    HttpClientModule,
+    MatTabsModule,
+  ],
   providers: [HttpClient],
   templateUrl: './params-form.component.html',
   styleUrls: ['./params-form.component.scss'],
 })
-export class ParamsFormComponent {
+export class ParamsFormComponent implements OnInit {
   requiredFiles = [
     'in.dat',
     'meteopgt.all',
@@ -28,6 +35,8 @@ export class ParamsFormComponent {
   isModeling = false;
 
   constructor(private http: HttpClient) {}
+
+  ngOnInit() {}
 
   get acceptString(): string {
     return this.requiredFiles.map((f) => '.' + f.split('.').pop()).join(',');
