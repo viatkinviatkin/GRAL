@@ -395,7 +395,7 @@ export class ParamsFormComponent implements OnInit {
     }
   }
 
-  async saveAllFiles() {
+  saveAllFiles() {
     if (
       this.pointDatForm.valid &&
       this.mettseriesForm.valid &&
