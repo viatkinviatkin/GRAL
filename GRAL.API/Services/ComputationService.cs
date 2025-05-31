@@ -88,17 +88,17 @@ namespace GRAL.API.Services
         {
             await EnsureDefaultFilesExist();
             var content = new StringBuilder();
-            content.AppendLine($"{model.CellSizeX} !cell-size for cartesian wind field in GRAL in x-direction");
-            content.AppendLine($"{model.CellSizeY} !cell-size for cartesian wind field in GRAL in y-direction");
-            content.AppendLine($"{model.CellSizeZ},{model.StretchingFactor:F2} !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
-            content.AppendLine($"{model.CellCountX} !number of cells for counting grid in GRAL in x-direction");
-            content.AppendLine($"{model.CellCountY} !number of cells for counting grid in GRAL in y-direction");
-            content.AppendLine($"{model.HorizontalSlices} !Number of horizontal slices");
-            content.AppendLine($"{model.SourceGroups} !Source groups to be computed seperated by a comma");
-            content.AppendLine($"{model.WestBorder} !West border of GRAL model domain [m]");
-            content.AppendLine($"{model.EastBorder} !East border of GRAL model domain [m]");
-            content.AppendLine($"{model.SouthBorder} !South border of GRAL model domain [m]");
-            content.AppendLine($"{model.NorthBorder} !North border of GRAL model domain [m]");
+            content.AppendLine($"{model.CellSizeX,-16} !cell-size for cartesian wind field in GRAL in x-direction");
+            content.AppendLine($"{model.CellSizeY,-16} !cell-size for cartesian wind field in GRAL in y-direction");
+            content.AppendLine($"{model.CellSizeZ},{model.StretchingFactor:F2,-14} !cell-size for cartesian wind field in GRAL in z-direction, streching factor for increasing cells heights with height");
+            content.AppendLine($"{model.CellCountX,-16} !number of cells for counting grid in GRAL in x-direction");
+            content.AppendLine($"{model.CellCountY,-16} !number of cells for counting grid in GRAL in y-direction");
+            content.AppendLine($"{model.HorizontalSlices,-16} !Number of horizontal slices");
+            content.AppendLine($"{model.SourceGroups},  !Source groups to be computed seperated by a comma");
+            content.AppendLine($"{model.WestBorder,-16} !West border of GRAL model domain [m]");
+            content.AppendLine($"{model.EastBorder,-16} !East border of GRAL model domain [m]");
+            content.AppendLine($"{model.SouthBorder,-16} !South border of GRAL model domain [m]");
+            content.AppendLine($"{model.NorthBorder,-16} !North border of GRAL model domain [m]");
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "GRAL.geb"), content.ToString());
         }
