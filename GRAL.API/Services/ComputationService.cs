@@ -75,13 +75,45 @@ namespace GRAL.API.Services
         {
             await EnsureDefaultFilesExist();
             var content = new StringBuilder();
-            content.AppendLine($"{records.Count} !Number of records");
             foreach (var record in records)
             {
-                content.AppendLine($"{record.WindSpeed:F2} {record.WindDirection:F2} {record.StabilityClass} {record.MixingHeight:F2}");
+                content.AppendLine($"{record.Date},{record.Hour},{record.Velocity:F1},{record.Direction:F1},{record.SC}");
             }
 
             await File.WriteAllTextAsync(Path.Combine(_computationPath, "mettimeseries.dat"), content.ToString());
+            
+            // Создаем meteopgt.all на основе mettimeseries.dat
+            await CreateMeteopgtAllAsync(records);
+        }
+
+        private async Task CreateMeteopgtAllAsync(List<MettseriesRecord> records)
+        {
+            var content = new StringBuilder();
+            
+            // Заголовок файла
+            content.AppendLine("10,0,10,    !Are dispersion situations classified =0 or not =1");
+            content.AppendLine("Wind direction sector,Wind speed class,stability class, frequency");
+
+            // Группируем записи по направлению ветра, скорости и классу стабильности
+            var groupedRecords = records
+                .GroupBy(r => new { r.Direction, r.Velocity, r.SC })
+                .Select(g => new
+                {
+                    WindDirection = g.Key.Direction,
+                    WindSpeed = g.Key.Velocity,
+                    StabilityClass = g.Key.SC,
+                    Frequency = 500 // Фиксированное значение частоты как в примере
+                })
+                .OrderBy(r => r.WindDirection)
+                .ThenBy(r => r.WindSpeed);
+
+            // Записываем сгруппированные данные
+            foreach (var record in groupedRecords)
+            {
+                content.AppendLine($"{record.WindDirection:F1},{record.WindSpeed:F1},{record.StabilityClass},{record.Frequency}");
+            }
+
+            await File.WriteAllTextAsync(Path.Combine(_computationPath, "meteopgt.all"), content.ToString());
         }
 
         public async Task SaveGralGebAsync(GralGebModel model)

@@ -22,10 +22,11 @@ namespace GRAL.API.Models
 
     public class MettseriesRecord
     {
-        public double WindSpeed { get; set; }
-        public double WindDirection { get; set; }
-        public int StabilityClass { get; set; }
-        public double MixingHeight { get; set; }
+        public string Date { get; set; }
+        public int Hour { get; set; }
+        public double Velocity { get; set; }
+        public double Direction { get; set; }
+        public int SC { get; set; }
     }
 
     public class GralGebModel
