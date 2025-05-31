@@ -6,6 +6,13 @@ export interface MarkerCoordinates {
   y: number;
 }
 
+export interface DomainCoordinates {
+  westBorder: number;
+  eastBorder: number;
+  southBorder: number;
+  northBorder: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -15,7 +22,16 @@ export class MapService {
   );
   markerCoordinates$ = this.markerCoordinates.asObservable();
 
+  private domainCoordinates = new BehaviorSubject<DomainCoordinates | null>(
+    null
+  );
+  domainCoordinates$ = this.domainCoordinates.asObservable();
+
   setMarkerCoordinates(coordinates: MarkerCoordinates | null) {
     this.markerCoordinates.next(coordinates);
+  }
+
+  setDomainCoordinates(coordinates: DomainCoordinates | null) {
+    this.domainCoordinates.next(coordinates);
   }
 }

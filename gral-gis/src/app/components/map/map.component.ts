@@ -82,6 +82,18 @@ export class MapComponent implements AfterViewInit {
           x: latlng.lng,
           y: latlng.lat,
         });
+      } else if (e.layer instanceof L.Rectangle) {
+        // Получаем координаты прямоугольника
+        const rectangle = e.layer as L.Rectangle;
+        const bounds = rectangle.getBounds();
+
+        // Отправляем координаты в сервис
+        this.mapService.setDomainCoordinates({
+          westBorder: bounds.getWest(),
+          eastBorder: bounds.getEast(),
+          southBorder: bounds.getSouth(),
+          northBorder: bounds.getNorth(),
+        });
       }
     });
 
@@ -89,8 +101,9 @@ export class MapComponent implements AfterViewInit {
       // Можно обработать изменения, если нужно
     });
     this.map.on(L.Draw.Event.DELETED, () => {
-      // Очищаем координаты при удалении маркера
+      // Очищаем координаты при удалении
       this.mapService.setMarkerCoordinates(null);
+      this.mapService.setDomainCoordinates(null);
     });
 
     // Пример heat layer

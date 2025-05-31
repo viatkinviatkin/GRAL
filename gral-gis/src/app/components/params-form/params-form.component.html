@@ -50,7 +50,7 @@
       mat-raised-button
       [color]="isModeling ? 'warn' : 'accent'"
       (click)="onModeling()"
-      [disabled]="!isSimulationEnabled && (!!error || files.length === 0)"
+      [disabled]="false"
     >
       {{ isModeling ? "Остановить моделирование" : "Запустить моделирование" }}
     </button>
@@ -385,6 +385,18 @@
 
                 <mat-form-field>
                   <mat-label>
+                    Северная граница [m]
+                    <mat-icon
+                      matTooltip="Северная граница области модели GRAL"
+                      class="help-icon"
+                      >help_outline</mat-icon
+                    >
+                  </mat-label>
+                  <input matInput type="number" formControlName="northBorder" />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>
                     Западная граница [m]
                     <mat-icon
                       matTooltip="Западная граница области модели GRAL"
@@ -393,18 +405,6 @@
                     >
                   </mat-label>
                   <input matInput type="number" formControlName="westBorder" />
-                </mat-form-field>
-
-                <mat-form-field>
-                  <mat-label>
-                    Восточная граница [m]
-                    <mat-icon
-                      matTooltip="Восточная граница области модели GRAL"
-                      class="help-icon"
-                      >help_outline</mat-icon
-                    >
-                  </mat-label>
-                  <input matInput type="number" formControlName="eastBorder" />
                 </mat-form-field>
 
                 <mat-form-field>
@@ -421,14 +421,14 @@
 
                 <mat-form-field>
                   <mat-label>
-                    Северная граница [m]
+                    Восточная граница [m]
                     <mat-icon
-                      matTooltip="Северная граница области модели GRAL"
+                      matTooltip="Восточная граница области модели GRAL"
                       class="help-icon"
                       >help_outline</mat-icon
                     >
                   </mat-label>
-                  <input matInput type="number" formControlName="northBorder" />
+                  <input matInput type="number" formControlName="eastBorder" />
                 </mat-form-field>
               </div>
 

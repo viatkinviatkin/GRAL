@@ -115,7 +115,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   isModeling = false;
   pointDatForm: FormGroup;
   mettseriesForm: FormGroup;
-  sourceGroups = ['Группа 1', 'Группа 2', 'Группа 3']; // Пример групп, замените на реальные
+  sourceGroups = ['1']; // Пример групп, замените на реальные
   gralGebForm: FormGroup;
   pollutantForm!: FormGroup;
   pollutants = [
@@ -157,14 +157,14 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   ) {
     this.dateAdapter.setLocale('ru-RU');
     this.pointDatForm = this.fb.group({
-      x: [0],
-      y: [0],
-      z: [0],
-      h2s: [0],
+      x: [366],
+      y: [-277],
+      z: [10],
+      h2s: [25],
       exitVelocity: [0],
-      diameter: [0],
-      temperature: [0],
-      sourceGroup: [''],
+      diameter: [0.2],
+      temperature: [273],
+      sourceGroup: ['1'],
       f25: [0],
       f10: [0],
       diaMax: [0],
@@ -188,10 +188,10 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
       cellsCountY: [10, [Validators.required, Validators.min(1)]],
       horizontalSlices: [1, [Validators.required, Validators.min(1)]],
       sourceGroups: ['1', [Validators.required]],
-      westBorder: [480, [Validators.required]],
-      eastBorder: [650, [Validators.required]],
-      southBorder: [-380, [Validators.required]],
-      northBorder: [-280, [Validators.required]],
+      westBorder: [320, [Validators.required]],
+      eastBorder: [420, [Validators.required]],
+      southBorder: [-310, [Validators.required]],
+      northBorder: [-250, [Validators.required]],
     });
 
     this.initPollutantForm();
@@ -225,6 +225,20 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
           this.pointDatForm.patchValue({
             x: coordinates.x,
             y: coordinates.y,
+          });
+        }
+      });
+
+    // Подписываемся на изменения координат области
+    this.mapService.domainCoordinates$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((coordinates) => {
+        if (coordinates) {
+          this.gralGebForm.patchValue({
+            westBorder: coordinates.westBorder,
+            eastBorder: coordinates.eastBorder,
+            southBorder: coordinates.southBorder,
+            northBorder: coordinates.northBorder,
           });
         }
       });
