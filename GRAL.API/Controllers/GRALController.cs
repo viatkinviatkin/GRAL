@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using GRAL.API.Services;
 using System.Linq;
+using System.Text.Json;
 
 namespace GRAL.API.Controllers
 {
@@ -197,51 +198,96 @@ namespace GRAL.API.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(computationPath))
-                {
-                    return BadRequest(new { message = "Computation path is required" });
-                }
-
-                var resultFiles = Directory.GetFiles(computationPath, "*.result_4326.geojson")
-                    .Select(f => new
-                    {
-                        fileName = Path.GetFileName(f),
-                        filePath = f
-                    })
+                var directory = new DirectoryInfo(computationPath);
+                var resultFiles = directory.GetFiles("*-101.result_4326.geojson")
+                    .OrderBy(f => f.Name)
+                    .Select(f => new { fileName = f.Name })
                     .ToList();
 
                 return Ok(resultFiles);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting result files");
-                return StatusCode(500, new { message = "Failed to get result files", error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpGet("result/{fileName}")]
-        public IActionResult GetResultFile([FromQuery] string computationPath, string fileName)
+        public IActionResult GetResult(string fileName, [FromQuery] string computationPath)
         {
             try
             {
-                if (string.IsNullOrEmpty(computationPath) || string.IsNullOrEmpty(fileName))
-                {
-                    return BadRequest(new { message = "Computation path and file name are required" });
-                }
-
                 var filePath = Path.Combine(computationPath, fileName);
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Result file not found" });
+                    return NotFound();
                 }
 
-                var fileContent = System.IO.File.ReadAllText(filePath);
-                return Ok(fileContent);
+                var json = System.IO.File.ReadAllText(filePath);
+                return Ok(JsonSerializer.Deserialize<object>(json));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error reading result file");
-                return StatusCode(500, new { message = "Failed to read result file", error = ex.Message });
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("metrics")]
+        public IActionResult GetMetricsFiles([FromQuery] string computationPath)
+        {
+            try
+            {
+                var directory = new DirectoryInfo(computationPath);
+                var metricsFiles = directory.GetFiles("mean_metrics_*.geojson")
+                    .OrderBy(f => f.Name)
+                    .Select(f => new { 
+                        fileName = f.Name,
+                        type = "mean",
+                        index = int.Parse(f.Name.Split('_').Last().Split('.')[0])
+                    })
+                    .Concat(directory.GetFiles("max_metrics_*.geojson")
+                        .OrderBy(f => f.Name)
+                        .Select(f => new { 
+                            fileName = f.Name,
+                            type = "max",
+                            index = int.Parse(f.Name.Split('_').Last().Split('.')[0])
+                        }))
+                    .Concat(directory.GetFiles("min_metrics_*.geojson")
+                        .OrderBy(f => f.Name)
+                        .Select(f => new { 
+                            fileName = f.Name,
+                            type = "min",
+                            index = int.Parse(f.Name.Split('_').Last().Split('.')[0])
+                        }))
+                    .OrderBy(f => f.index)
+                    .ThenBy(f => f.type)
+                    .ToList();
+
+                return Ok(metricsFiles);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("metrics/{fileName}")]
+        public IActionResult GetMetrics(string fileName, [FromQuery] string computationPath)
+        {
+            try
+            {
+                var filePath = Path.Combine(computationPath, fileName);
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound();
+                }
+
+                var json = System.IO.File.ReadAllText(filePath);
+                return Ok(JsonSerializer.Deserialize<object>(json));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 

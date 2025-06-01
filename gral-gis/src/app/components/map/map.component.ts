@@ -202,7 +202,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
     this.loadResults('./computation', index);
   }
 
-  async loadResults(computationPath: string, timeIndex?: number) {
+  async loadResults(computationPath: string, timeIndex: number = 0) {
     try {
       const resultFiles = await this.http
         .get<any[]>(
@@ -242,54 +242,70 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       this.heatLayers.push(heatLayer);
 
       // Загружаем статистики
-      await this.loadStatistics(computationPath);
+      //await this.loadStatistics(computationPath, timeIndex);
     } catch (error) {
       console.error('Error loading results:', error);
     }
   }
 
-  private async loadStatistics(computationPath: string) {
+  private async loadStatistics(computationPath: string, timeIndex?: number) {
     try {
-      const response = await this.http
-        .get<any>(
-          `${environment.apiUrl}/api/gral/statistics?computationPath=${computationPath}`
+      const metricsFiles = await this.http
+        .get<any[]>(
+          `${environment.apiUrl}/api/gral/metrics?computationPath=${computationPath}`
         )
         .toPromise();
 
-      if (!response || !response.features) {
+      if (!metricsFiles || metricsFiles.length === 0) {
         return;
       }
 
       // Очищаем предыдущие слои статистик
       this.clearStatisticsLayers();
 
+      // Получаем файлы для текущего временного среза
+      const currentMetrics = metricsFiles.filter(
+        (file: any) => file.index === 101 + (timeIndex as any)
+      );
+
       // Создаем слои для максимальных и минимальных значений
       const maxPoints: L.Layer[] = [];
       const minPoints: L.Layer[] = [];
 
-      response.features.forEach((point: StatisticsPoint) => {
-        const { coordinates } = point.geometry;
-        const { max, min, avg } = point.properties;
+      for (const metric of currentMetrics) {
+        const response = await this.http
+          .get<any>(
+            `${environment.apiUrl}/api/gral/metrics/${metric.fileName}?computationPath=${computationPath}`
+          )
+          .toPromise();
 
-        // Создаем маркер для максимального значения
-        const maxMarker = L.circleMarker([coordinates[1], coordinates[0]], {
-          radius: 5,
-          color: 'red',
-          fillColor: 'red',
-          fillOpacity: 0.7,
-        }).bindPopup(`Максимальная концентрация: ${max.toFixed(4)}`);
+        if (!response || !response.features) {
+          continue;
+        }
 
-        // Создаем маркер для минимального значения
-        const minMarker = L.circleMarker([coordinates[1], coordinates[0]], {
-          radius: 5,
-          color: 'blue',
-          fillColor: 'blue',
-          fillOpacity: 0.7,
-        }).bindPopup(`Минимальная концентрация: ${min.toFixed(4)}`);
+        response.features.forEach((point: any) => {
+          const { coordinates } = point.geometry;
+          const { value } = point.properties;
 
-        maxPoints.push(maxMarker);
-        minPoints.push(minMarker);
-      });
+          if (metric.type === 'max') {
+            const maxMarker = L.circleMarker([coordinates[1], coordinates[0]], {
+              radius: 5,
+              color: 'red',
+              fillColor: 'red',
+              fillOpacity: 0.7,
+            }).bindPopup(`Максимальная концентрация: ${value.toFixed(4)}`);
+            maxPoints.push(maxMarker);
+          } else if (metric.type === 'min') {
+            const minMarker = L.circleMarker([coordinates[1], coordinates[0]], {
+              radius: 5,
+              color: 'blue',
+              fillColor: 'blue',
+              fillOpacity: 0.7,
+            }).bindPopup(`Минимальная концентрация: ${value.toFixed(4)}`);
+            minPoints.push(minMarker);
+          }
+        });
+      }
 
       // Добавляем слои на карту
       if (this.showMaxPoints) {
