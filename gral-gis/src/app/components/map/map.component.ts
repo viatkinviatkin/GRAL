@@ -46,7 +46,13 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   private subscription: Subscription;
   timelineItems: string[] = [];
   showMaxPoints = false;
+  showMeanPoints = false;
   showMinPoints = false;
+  private currentTimeIndex: number = 0;
+  private heatLayer: any;
+  private meanLayer: L.LayerGroup = L.layerGroup();
+  private maxLayer: L.LayerGroup = L.layerGroup();
+  private minLayer: L.LayerGroup = L.layerGroup();
 
   constructor(
     private mapExportService: MapExportService,
@@ -191,7 +197,8 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   onTimeChange(event: { value: number; label: string }) {
-    this.updateHeatLayer(event.value - 1);
+    this.currentTimeIndex = event.value - 1;
+    this.updateHeatLayer(this.currentTimeIndex);
   }
 
   private updateHeatLayer(index: number) {
@@ -204,6 +211,11 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
 
   async loadResults(computationPath: string, timeIndex: number = 0) {
     try {
+      if (this.maxLayer) this.map.removeLayer(this.maxLayer);
+      if (this.minLayer) this.map.removeLayer(this.minLayer);
+      if (this.meanLayer) this.map.removeLayer(this.meanLayer);
+      if (this.heatLayer) this.map.removeLayer(this.heatLayer);
+
       const resultFiles = await this.http
         .get<any[]>(
           `${environment.apiUrl}/api/gral/results?computationPath=${computationPath}`
@@ -232,94 +244,118 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         return;
       }
 
-      const heatLayer = (L as any)
+      // Сначала рассчитываем статистики
+      const { globalMax, globalMin, globalMean } =
+        this.calculateAndDisplayStatistics(resultData);
+
+      // Затем обновляем или создаем тепловой слой с правильными min/max
+
+      this.heatLayer = (L as any)
         .heatLayer(resultData, {
           radius: 5,
-          max: 0.1,
+          //max: globalMax,
+
+          //min: globalMin,
         })
         .addTo(this.map);
-
-      this.heatLayers.push(heatLayer);
-
-      // Загружаем статистики
-      //await this.loadStatistics(computationPath, timeIndex);
     } catch (error) {
       console.error('Error loading results:', error);
     }
   }
 
-  private async loadStatistics(computationPath: string, timeIndex?: number) {
-    try {
-      const metricsFiles = await this.http
-        .get<any[]>(
-          `${environment.apiUrl}/api/gral/metrics?computationPath=${computationPath}`
-        )
-        .toPromise();
+  private calculateAndDisplayStatistics(resultData: any[]) {
+    // Очищаем предыдущие слои статистик
+    this.clearStatisticsLayers();
 
-      if (!metricsFiles || metricsFiles.length === 0) {
-        return;
-      }
+    // Находим глобальные min, max и mean значения
+    const values = resultData.map((point) => point[2]);
+    const globalMax = Math.max(...values);
+    const globalMin = Math.min(...values);
+    const globalMean = values.reduce((a, b) => a + b, 0) / values.length;
 
-      // Очищаем предыдущие слои статистик
-      this.clearStatisticsLayers();
+    // Сортируем значения для нахождения ближайших к среднему
+    const sortedValues = [...values].sort((a, b) => a - b);
+    const meanIndex = Math.floor(sortedValues.length / 2);
+    const closestToMean = sortedValues[meanIndex];
 
-      // Получаем файлы для текущего временного среза
-      const currentMetrics = metricsFiles.filter(
-        (file: any) => file.index === 101 + (timeIndex as any)
-      );
+    // Создаем слои для статистик
+    const meanPoints: L.Layer[] = [];
+    const maxPoints: L.Layer[] = [];
+    const minPoints: L.Layer[] = [];
 
-      // Создаем слои для максимальных и минимальных значений
-      const maxPoints: L.Layer[] = [];
-      const minPoints: L.Layer[] = [];
+    // Находим все точки с соответствующими значениями
+    resultData.forEach((point) => {
+      const value = point[2];
+      const [lat, lon] = point;
 
-      for (const metric of currentMetrics) {
-        const response = await this.http
-          .get<any>(
-            `${environment.apiUrl}/api/gral/metrics/${metric.fileName}?computationPath=${computationPath}`
-          )
-          .toPromise();
-
-        if (!response || !response.features) {
-          continue;
-        }
-
-        response.features.forEach((point: any) => {
-          const { coordinates } = point.geometry;
-          const { value } = point.properties;
-
-          if (metric.type === 'max') {
-            const maxMarker = L.circleMarker([coordinates[1], coordinates[0]], {
-              radius: 5,
-              color: 'red',
-              fillColor: 'red',
-              fillOpacity: 0.7,
-            }).bindPopup(`Максимальная концентрация: ${value.toFixed(4)}`);
-            maxPoints.push(maxMarker);
-          } else if (metric.type === 'min') {
-            const minMarker = L.circleMarker([coordinates[1], coordinates[0]], {
-              radius: 5,
-              color: 'blue',
-              fillColor: 'blue',
-              fillOpacity: 0.7,
-            }).bindPopup(`Минимальная концентрация: ${value.toFixed(4)}`);
-            minPoints.push(minMarker);
-          }
+      // Добавляем точки с максимальным значением
+      if (Math.abs(value - globalMax) < 1e-10) {
+        const maxMarker = L.circleMarker([lat, lon], {
+          radius: 5,
+          color: 'red',
+          fillColor: 'red',
+          fillOpacity: 0.7,
+        }).bindPopup(`Максимальная концентрация: ${value.toFixed(4)}`, {
+          autoClose: false,
         });
+        maxPoints.push(maxMarker);
       }
 
-      // Добавляем слои на карту
-      if (this.showMaxPoints) {
-        const maxLayer = L.layerGroup(maxPoints).addTo(this.map);
-        this.statisticsLayers.push(maxLayer);
+      // Добавляем точки с минимальным значением
+      if (Math.abs(value - globalMin) < 1e-10) {
+        const minMarker = L.circleMarker([lat, lon], {
+          radius: 5,
+          color: 'blue',
+          fillColor: 'blue',
+          fillOpacity: 0.7,
+        }).bindPopup(`Минимальная концентрация: ${value.toFixed(4)}`, {
+          autoClose: false,
+        });
+
+        minPoints.push(minMarker);
       }
 
-      if (this.showMinPoints) {
-        const minLayer = L.layerGroup(minPoints).addTo(this.map);
-        this.statisticsLayers.push(minLayer);
+      // Добавляем точки со средним значением (ближайшие к медиане)
+      if (Math.abs(value - closestToMean) < 1e-10) {
+        const meanMarker = L.circleMarker([lat, lon], {
+          radius: 5,
+          color: 'green',
+          fillColor: 'green',
+          fillOpacity: 0.7,
+        }).bindPopup(`Средняя концентрация: ${value.toFixed(4)}`, {
+          autoClose: false,
+        });
+        meanPoints.push(meanMarker);
       }
-    } catch (error) {
-      console.error('Error loading statistics:', error);
-    }
+    });
+
+    // Создаем и сохраняем слои
+    this.meanLayer = L.layerGroup(meanPoints);
+    this.maxLayer = L.layerGroup(maxPoints);
+    this.minLayer = L.layerGroup(minPoints);
+
+    // Добавляем слои на карту в зависимости от настроек видимостиhis.showMaxPoints
+    this.meanLayer.addTo(this.map);
+    this.maxLayer.addTo(this.map);
+    this.minLayer.addTo(this.map);
+    this.showMaxPoints = true;
+    this.showMeanPoints = true;
+    this.showMinPoints = true;
+    this.openAllPopups();
+
+    // Выводим информацию о найденных значениях
+    console.log(`Глобальные статистики для текущего среза:
+      Максимальная концентрация: ${globalMax.toFixed(4)} (${
+      maxPoints.length
+    } точек)
+      Минимальная концентрация: ${globalMin.toFixed(4)} (${
+      minPoints.length
+    } точек)
+      Средняя концентрация: ${globalMean.toFixed(4)} (${
+      meanPoints.length
+    } точек)`);
+
+    return { globalMax, globalMin, globalMean };
   }
 
   private clearHeatLayers() {
@@ -330,19 +366,57 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private clearStatisticsLayers() {
-    this.statisticsLayers.forEach((layer) => {
-      this.map.removeLayer(layer);
+    if (this.meanLayer) {
+      this.map.removeLayer(this.meanLayer);
+    }
+    if (this.maxLayer) {
+      this.map.removeLayer(this.maxLayer);
+    }
+    if (this.minLayer) {
+      this.map.removeLayer(this.minLayer);
+    }
+  }
+
+  private openAllPopups() {
+    // Открываем попапы для всех видимых слоев
+    this.meanLayer.getLayers().forEach((marker) => {
+      let cmarker = marker as L.CircleMarker;
+      cmarker.openPopup(cmarker.getLatLng());
     });
-    this.statisticsLayers = [];
+    this.maxLayer.getLayers().forEach((marker) => {
+      let cmarker = marker as L.CircleMarker;
+      cmarker.openPopup(cmarker.getLatLng());
+    });
+    this.minLayer.getLayers().forEach((marker) => {
+      let cmarker = marker as L.CircleMarker;
+      cmarker.openPopup(cmarker.getLatLng());
+    });
   }
 
   toggleMaxPoints() {
     this.showMaxPoints = !this.showMaxPoints;
-    this.loadStatistics('./computation');
+    if (this.showMaxPoints) {
+      this.maxLayer?.addTo(this.map);
+    } else {
+      this.maxLayer?.remove();
+    }
   }
 
   toggleMinPoints() {
     this.showMinPoints = !this.showMinPoints;
-    this.loadStatistics('./computation');
+    if (this.showMinPoints) {
+      this.minLayer?.addTo(this.map);
+    } else {
+      this.minLayer?.remove();
+    }
+  }
+
+  toggleMeanPoints() {
+    this.showMeanPoints = !this.showMeanPoints;
+    if (this.showMeanPoints) {
+      this.meanLayer?.addTo(this.map);
+    } else {
+      this.meanLayer?.remove();
+    }
   }
 }
