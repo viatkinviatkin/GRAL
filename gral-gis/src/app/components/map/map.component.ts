@@ -15,6 +15,20 @@ import { TimelineSliderComponent } from '../timeline-slider/timeline-slider.comp
 // Исправляем пути к маркерам Leaflet
 // default icon in script
 
+interface StatisticsPoint {
+  type: string;
+  geometry: {
+    type: string;
+    coordinates: [number, number];
+  };
+  properties: {
+    avg: number;
+    max: number;
+    min: number;
+    std: number;
+  };
+}
+
 @Component({
   selector: 'app-map',
   standalone: true,
@@ -28,8 +42,11 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   private easyPrintControl: any;
   drawControl: any;
   private heatLayers: any[] = [];
+  private statisticsLayers: L.Layer[] = [];
   private subscription: Subscription;
   timelineItems: string[] = [];
+  showMaxPoints = false;
+  showMinPoints = false;
 
   constructor(
     private mapExportService: MapExportService,
@@ -109,7 +126,9 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
           x: latlng.lng,
           y: latlng.lat,
         });
-      } else if (e.layer instanceof L.Rectangle) {
+      }
+
+      if (e.layer instanceof L.Rectangle) {
         // Получаем координаты прямоугольника
         const rectangle = e.layer as L.Rectangle;
         const bounds = rectangle.getBounds();
@@ -133,16 +152,6 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       this.mapService.setDomainCoordinates(null);
     });
     this.mapService.setResultIsReady(true);
-    // Пример heat layer
-    const heat = (L as any)
-      .heatLayer(
-        [
-          [55.75, 37.61, 0.5],
-          [55.76, 37.62, 0.8],
-        ],
-        { radius: 25 }
-      )
-      .addTo(this.map);
 
     // Добавляем easyPrint control (без кнопки, вызов через метод)
     let printControl = (this.easyPrintControl = (L as any)
@@ -206,8 +215,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         return;
       }
 
-      // Если указан индекс времени, загружаем только этот файл
-      const file = resultFiles[timeIndex || 0];
+      const file = resultFiles[timeIndex as number];
 
       if (!file) {
         console.error('No result files found');
@@ -228,15 +236,73 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         .heatLayer(resultData, {
           radius: 5,
           max: 0.1,
-          //blur: 1,
-          //minOpacity: 0.5,
-          //gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' },
         })
         .addTo(this.map);
 
       this.heatLayers.push(heatLayer);
+
+      // Загружаем статистики
+      await this.loadStatistics(computationPath);
     } catch (error) {
       console.error('Error loading results:', error);
+    }
+  }
+
+  private async loadStatistics(computationPath: string) {
+    try {
+      const response = await this.http
+        .get<any>(
+          `${environment.apiUrl}/api/gral/statistics?computationPath=${computationPath}`
+        )
+        .toPromise();
+
+      if (!response || !response.features) {
+        return;
+      }
+
+      // Очищаем предыдущие слои статистик
+      this.clearStatisticsLayers();
+
+      // Создаем слои для максимальных и минимальных значений
+      const maxPoints: L.Layer[] = [];
+      const minPoints: L.Layer[] = [];
+
+      response.features.forEach((point: StatisticsPoint) => {
+        const { coordinates } = point.geometry;
+        const { max, min, avg } = point.properties;
+
+        // Создаем маркер для максимального значения
+        const maxMarker = L.circleMarker([coordinates[1], coordinates[0]], {
+          radius: 5,
+          color: 'red',
+          fillColor: 'red',
+          fillOpacity: 0.7,
+        }).bindPopup(`Максимальная концентрация: ${max.toFixed(4)}`);
+
+        // Создаем маркер для минимального значения
+        const minMarker = L.circleMarker([coordinates[1], coordinates[0]], {
+          radius: 5,
+          color: 'blue',
+          fillColor: 'blue',
+          fillOpacity: 0.7,
+        }).bindPopup(`Минимальная концентрация: ${min.toFixed(4)}`);
+
+        maxPoints.push(maxMarker);
+        minPoints.push(minMarker);
+      });
+
+      // Добавляем слои на карту
+      if (this.showMaxPoints) {
+        const maxLayer = L.layerGroup(maxPoints).addTo(this.map);
+        this.statisticsLayers.push(maxLayer);
+      }
+
+      if (this.showMinPoints) {
+        const minLayer = L.layerGroup(minPoints).addTo(this.map);
+        this.statisticsLayers.push(minLayer);
+      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
     }
   }
 
@@ -245,5 +311,22 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       this.map.removeLayer(layer);
     });
     this.heatLayers = [];
+  }
+
+  private clearStatisticsLayers() {
+    this.statisticsLayers.forEach((layer) => {
+      this.map.removeLayer(layer);
+    });
+    this.statisticsLayers = [];
+  }
+
+  toggleMaxPoints() {
+    this.showMaxPoints = !this.showMaxPoints;
+    this.loadStatistics('./computation');
+  }
+
+  toggleMinPoints() {
+    this.showMinPoints = !this.showMinPoints;
+    this.loadStatistics('./computation');
   }
 }

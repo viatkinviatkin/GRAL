@@ -3,6 +3,31 @@
   <app-timeline-slider
     [timelineItems]="timelineItems"
     (timeChange)="onTimeChange($event)"
-  >
-  </app-timeline-slider>
+  ></app-timeline-slider>
+  <div class="statistics-controls">
+    <label>
+      <input
+        type="checkbox"
+        [checked]="showMaxPoints"
+        (change)="toggleMaxPoints()"
+      />
+      Максимальные концентрации
+    </label>
+    <label>
+      <input
+        type="checkbox"
+        [checked]="showMinPoints"
+        (change)="toggleMaxPoints()"
+      />
+      Средние концентрации
+    </label>
+    <label>
+      <input
+        type="checkbox"
+        [checked]="showMinPoints"
+        (change)="toggleMinPoints()"
+      />
+      Минимальные концентрации
+    </label>
+  </div>
 </div>
