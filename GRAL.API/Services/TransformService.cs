@@ -58,7 +58,7 @@ namespace GRAL.API.Services
                     if (headerKeys.Contains(parts[0]))
                     {
                         header[parts[0]] = double.Parse(parts[1]);
-                    }
+                }
                     else
                     {
                         data.Add(parts.Select(double.Parse).ToList());
@@ -72,7 +72,6 @@ namespace GRAL.API.Services
                 var cellsize = header["cellsize"];
                 var nodata = header["NODATA_value"];
 
-                // Создаем данные для heatmap
                 var heatData = new List<double[]>();
                 for (int i = 0; i < nrows; i++)
                 {
@@ -83,7 +82,7 @@ namespace GRAL.API.Services
 
                         // Точка центра ячейки
                         var x = xllcorner + (j + 0.5) * cellsize;
-                        var y = yllcorner + (i + 0.5) * cellsize;
+                        var y = yllcorner + (nrows - i - 0.5) * cellsize;  // Ключевое изменение!
 
                         // Конвертация в EPSG:4326
                         var transformed = _transformer.MathTransform.Transform(new[] { x, y });
