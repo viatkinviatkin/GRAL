@@ -154,12 +154,23 @@ namespace GRAL.API.Services
 
         public async Task SaveAllFilesAsync(SaveAllFilesModel model)
         {
+            await ClearComputationDirectoryAsync();
             await EnsureDefaultFilesExist();
             await SavePointDatAsync(model.PointDat);
             await SaveMettseriesAsync(model.Mettseries);
             await SaveGralGebAsync(model.GralGeb);
             await SavePollutantAsync(model.Pollutant);
             _areFilesSaved = true;
+        }
+
+        private async Task ClearComputationDirectoryAsync()
+        {
+            var files = Directory.GetFiles(_computationPath);
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
+
         }
     }
 } 

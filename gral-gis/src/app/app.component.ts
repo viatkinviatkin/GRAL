@@ -4,6 +4,7 @@ import { FileUploadComponent } from './components/file-upload/file-upload.compon
 import { ExportMapComponent } from './components/export-map/export-map.component';
 import { MapComponent } from './components/map/map.component';
 import { ParamsFormComponent } from './components/params-form/params-form.component';
+import { TimelineSliderComponent } from './components/timeline-slider/timeline-slider.component';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,7 @@ import { ParamsFormComponent } from './components/params-form/params-form.compon
     ExportMapComponent,
     MapComponent,
     ParamsFormComponent,
+    TimelineSliderComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],

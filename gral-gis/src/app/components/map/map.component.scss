@@ -1,4 +1,10 @@
-/* Стили для map */
+.map-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+} /* Стили для map */
 
 .map-tools {
   display: flex;

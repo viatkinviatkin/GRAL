@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { MapService } from '../../services/map.service';
 import { environment } from '../../../environments/environment';
 import { Subscription } from 'rxjs';
+import { TimelineSliderComponent } from '../timeline-slider/timeline-slider.component';
 // import 'leaflet-history'; // если появится npm-пакет или подключить вручную
 
 // Исправляем пути к маркерам Leaflet
@@ -17,7 +18,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TimelineSliderComponent],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss'],
 })
@@ -28,6 +29,14 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   drawControl: any;
   private heatLayers: any[] = [];
   private subscription: Subscription;
+  timelineItems: string[] = [
+    '00:00',
+    '01:00',
+    '02:00',
+    '03:00',
+    '04:00',
+    '05:00',
+  ];
 
   constructor(
     private mapExportService: MapExportService,
@@ -66,7 +75,6 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       if (!ready) {
         return;
       }
-
       this.loadResults('./computation');
     });
     this.map.addLayer(this.drawnItems);
@@ -175,9 +183,20 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
     L.marker([coords.y, coords.x]).addTo(this.map);
   }
 
-  async loadResults(computationPath: string) {
+  onTimeChange(event: { value: number; label: string }) {
+    this.updateHeatLayer(event.value - 1);
+  }
+
+  private updateHeatLayer(index: number) {
+    // Очищаем предыдущие тепловые карты
+    this.clearHeatLayers();
+
+    // Загружаем и отображаем тепловую карту для выбранного времени
+    this.loadResults('./computation', index);
+  }
+
+  async loadResults(computationPath: string, timeIndex?: number) {
     try {
-      // Получаем список файлов результатов
       const resultFiles = await this.http
         .get<any[]>(
           `${environment.apiUrl}/api/gral/results?computationPath=${computationPath}`
@@ -189,28 +208,33 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         return;
       }
 
-      // Загружаем и отображаем каждый файл
-      for (const file of resultFiles) {
-        const resultData = await this.http
-          .get<any>(
-            `${environment.apiUrl}/api/gral/result/${file.fileName}?computationPath=${computationPath}`
-          )
-          .toPromise();
+      // Если указан индекс времени, загружаем только этот файл
+      const file = resultFiles[timeIndex || 0];
 
-        if (!resultData) {
-          continue;
-        }
-        // Отправляем данные для отображения на карте
-        (L as any)
-          .heatLayer(resultData, {
-            radius: 10, // Половина размера ячейки (5м для cell=10)
-            blur: 1, // Лёгкое размытие краёв
-            //maxZoom: 18,
-            minOpacity: 0.5, // Уменьшает "просвечивание"
-            gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' }, // Кастомизация
-          })
-          .addTo(this.map);
+      if (!file) {
+        return;
       }
+
+      const resultData = await this.http
+        .get<any>(
+          `${environment.apiUrl}/api/gral/result/${file.fileName}?computationPath=${computationPath}`
+        )
+        .toPromise();
+
+      if (!resultData) {
+        return;
+      }
+
+      const heatLayer = (L as any)
+        .heatLayer(resultData, {
+          radius: 10,
+          blur: 1,
+          minOpacity: 0.5,
+          gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' },
+        })
+        .addTo(this.map);
+
+      this.heatLayers.push(heatLayer);
     } catch (error) {
       console.error('Error loading results:', error);
     }

@@ -1,0 +1,131 @@
+@mixin rangeThumb {
+  width: 18px;
+  height: 18px;
+  margin: -8px 0 0;
+  border-radius: 50%;
+  background: #3f51b5;
+  cursor: pointer;
+  border: 0 !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+@mixin rangeTrack {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  background: #000000;
+}
+
+.control_container {
+  background-color: rgba(255, 255, 255, 0.75);
+  padding: 10px 30px 0px 30px;
+  position: relative;
+}
+
+.range {
+  position: relative;
+  width: calc(90.25px * (var(--timeline-items-count) - 1));
+  height: 5px;
+  margin: 0 auto;
+}
+
+.range input {
+  width: 100%;
+  position: absolute;
+  top: 2px;
+  height: 0;
+  -webkit-appearance: none;
+  margin: 0;
+  padding: 0;
+
+  // Thumb
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    @include rangeThumb;
+  }
+
+  &::-moz-range-thumb {
+    @include rangeThumb;
+  }
+
+  &::-ms-thumb {
+    @include rangeThumb;
+  }
+
+  // Track
+  &::-webkit-slider-runnable-track {
+    @include rangeTrack;
+  }
+
+  &::-moz-range-track {
+    @include rangeTrack;
+  }
+
+  &::-ms-track {
+    @include rangeTrack;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &::-ms-track {
+    width: 100%;
+    cursor: pointer;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
+}
+
+.range-labels {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+
+  li {
+    position: relative;
+    text-align: center;
+    color: #b2b2b2;
+    font-size: 14px;
+    cursor: pointer;
+    width: 90.25px;
+    user-select: none;
+
+    &::before {
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      content: "";
+      width: 9px;
+      height: 9px;
+      background: #b2b2b2;
+      border-radius: 50%;
+      transition: background-color 0.2s ease;
+    }
+
+    &:hover {
+      color: #3f51b5;
+      &::before {
+        background: #3f51b5;
+      }
+    }
+  }
+
+  .active {
+    color: #3f51b5;
+  }
+
+  .selected::before {
+    background: #3f51b5;
+  }
+
+  .active.selected::before {
+    display: none;
+  }
+}

@@ -1,0 +1,22 @@
+<div class="control_container">
+  <div class="range">
+    <input
+      id="rangeinputslide"
+      type="range"
+      [min]="1"
+      [max]="timelineItems.length"
+      [value]="currentValue"
+      (input)="onSliderChange($event)"
+    />
+  </div>
+  <ul class="range-labels">
+    <li
+      *ngFor="let item of timelineItems; let i = index"
+      [class.active]="i + 1 === currentValue"
+      [class.selected]="i + 1 <= currentValue"
+      (click)="onLabelClick(i + 1)"
+    >
+      {{ item }}
+    </li>
+  </ul>
+</div>
