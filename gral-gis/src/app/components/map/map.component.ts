@@ -226,10 +226,11 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
 
       const heatLayer = (L as any)
         .heatLayer(resultData, {
-          radius: 10,
-          blur: 1,
-          minOpacity: 0.5,
-          gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' },
+          radius: 5,
+          max: 0.1,
+          //blur: 1,
+          //minOpacity: 0.5,
+          //gradient: { 0.1: 'blue', 0.5: 'lime', 1: 'red' },
         })
         .addTo(this.map);
 
