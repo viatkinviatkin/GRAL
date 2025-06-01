@@ -5,6 +5,8 @@ import {
   EventEmitter,
   OnInit,
   ElementRef,
+  OnChanges,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -15,7 +17,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './timeline-slider.component.html',
   styleUrl: './timeline-slider.component.scss',
 })
-export class TimelineSliderComponent implements OnInit {
+export class TimelineSliderComponent implements OnInit, OnChanges {
   @Input() timelineItems: string[] = [];
   @Output() timeChange = new EventEmitter<{ value: number; label: string }>();
 
@@ -24,18 +26,20 @@ export class TimelineSliderComponent implements OnInit {
   constructor(private elementRef: ElementRef) {}
 
   ngOnInit() {
-    // Устанавливаем CSS-переменную для количества элементов
+    this.updateTimelineItemsCount();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['timelineItems']) {
+      this.updateTimelineItemsCount();
+    }
+  }
+
+  private updateTimelineItemsCount() {
     this.elementRef.nativeElement.style.setProperty(
       '--timeline-items-count',
       this.timelineItems.length.toString()
     );
-
-    if (this.timelineItems.length > 0) {
-      this.timeChange.emit({
-        value: this.currentValue,
-        label: this.timelineItems[this.currentValue - 1],
-      });
-    }
   }
 
   onSliderChange(event: Event) {

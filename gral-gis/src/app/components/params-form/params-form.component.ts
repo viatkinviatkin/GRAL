@@ -114,7 +114,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   isDragOver = false;
   isModeling = false;
   pointDatForm: FormGroup;
-  mettseriesForm: FormGroup;
+  mettseriesForm!: FormGroup;
   sourceGroups = ['1']; // Пример групп, замените на реальные
   gralGebForm: FormGroup;
   pollutantForm!: FormGroup;
@@ -176,25 +176,6 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
       depConc: [0],
     });
 
-    this.mettseriesForm = this.fb.group({
-      records: this.fb.array([
-        this.fb.group({
-          date: ['2025-05-31T19:00:00.000Z'],
-          hour: [1],
-          velocity: [3],
-          direction: [136],
-          sc: [4],
-        }),
-        this.fb.group({
-          date: ['2025-05-31T19:00:00.000Z'],
-          hour: [2],
-          velocity: [7],
-          direction: [135],
-          sc: [5],
-        }),
-      ]),
-    });
-
     this.gralGebForm = this.fb.group({
       cellSizeX: [10, [Validators.required, Validators.min(0)]],
       cellSizeY: [10, [Validators.required, Validators.min(0)]],
@@ -233,6 +214,9 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.initForm();
+    this.loadMetTimeSeries();
+
     // Подписываемся на изменения координат маркера
     this.mapService.markerCoordinates$
       .pipe(takeUntil(this.destroy$))
@@ -388,7 +372,7 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
 
             // Загружаем результаты после успешного завершения
             if (status === 'Simulation completed successfully') {
-              this.mapService.resultIsReady.next(true);
+              this.mapService.setResultIsReady(true);
             }
           }
         },
@@ -572,5 +556,42 @@ export class ParamsFormComponent implements OnInit, OnDestroy {
       diameter: [0, [Validators.required, Validators.min(0)]],
       depositionVelocity: [0, [Validators.required, Validators.min(0)]],
     });
+  }
+
+  private initForm() {
+    this.mettseriesForm = this.fb.group({
+      records: this.fb.array([
+        this.fb.group({
+          date: ['2025-05-31T19:00:00.000Z'],
+          hour: [1],
+          velocity: [3],
+          direction: [136],
+          sc: [4],
+        }),
+        this.fb.group({
+          date: ['2025-05-31T19:00:00.000Z'],
+          hour: [2],
+          velocity: [7],
+          direction: [135],
+          sc: [5],
+        }),
+      ]),
+    });
+
+    // Подписываемся на изменения формы
+    this.mettseriesForm.valueChanges.subscribe((value) => {
+      if (value && value.records) {
+        this.mapService.setMetTimeSeries(value.records);
+      }
+    });
+
+    // Инициализируем начальные значения
+    this.mapService.setMetTimeSeries(
+      this.mettseriesForm.get('records')?.value || []
+    );
+  }
+
+  private loadMetTimeSeries() {
+    // Implementation of loadMetTimeSeries method
   }
 }

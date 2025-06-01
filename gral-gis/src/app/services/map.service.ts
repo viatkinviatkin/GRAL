@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, Observable } from 'rxjs';
 import proj4 from 'proj4';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -23,14 +23,18 @@ export class MapService {
   private markerCoordinates = new BehaviorSubject<MarkerCoordinates | null>(
     null
   );
-  resultIsReady = new BehaviorSubject<any>(false);
-  markerCoordinates$ = this.markerCoordinates.asObservable();
-  resultIsReady$ = this.resultIsReady.asObservable();
-
   private domainCoordinates = new BehaviorSubject<DomainCoordinates | null>(
     null
   );
+  private resultIsReady = new BehaviorSubject<boolean>(false);
+  private metTimeSeries = new BehaviorSubject<any[]>([]);
+  private timelineItems = new BehaviorSubject<string[]>([]);
+
+  markerCoordinates$ = this.markerCoordinates.asObservable();
   domainCoordinates$ = this.domainCoordinates.asObservable();
+  resultIsReady$ = this.resultIsReady.asObservable();
+  metTimeSeries$ = this.metTimeSeries.asObservable();
+  timelineItems$ = this.timelineItems.asObservable();
 
   // Определяем проекции
   private readonly wgs84 = 'EPSG:4326';
@@ -73,5 +77,24 @@ export class MapService {
     } else {
       this.domainCoordinates.next(null);
     }
+  }
+
+  setResultIsReady(ready: boolean) {
+    this.resultIsReady.next(ready);
+  }
+
+  setMetTimeSeries(series: any[]) {
+    this.metTimeSeries.next(series);
+    // Обновляем timelineItems при изменении metTimeSeries
+    const items = series.map((item) => {
+      const date = new Date(item.date);
+      const hour = item.hour.toString().padStart(2, '0');
+      return `${date.toLocaleDateString()} ${hour}:00`;
+    });
+    this.timelineItems.next(items);
+  }
+
+  getTimelineItems(): Observable<string[]> {
+    return this.timelineItems$;
   }
 }

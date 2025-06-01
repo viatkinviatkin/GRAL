@@ -29,14 +29,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
   drawControl: any;
   private heatLayers: any[] = [];
   private subscription: Subscription;
-  timelineItems: string[] = [
-    '00:00',
-    '01:00',
-    '02:00',
-    '03:00',
-    '04:00',
-    '05:00',
-  ];
+  timelineItems: string[] = [];
 
   constructor(
     private mapExportService: MapExportService,
@@ -50,6 +43,11 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         }
       }
     );
+
+    // Подписываемся на изменения timelineItems
+    this.mapService.timelineItems$.subscribe((items) => {
+      this.timelineItems = items;
+    });
   }
 
   ngOnInit(): void {
@@ -134,7 +132,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       this.mapService.setMarkerCoordinates(null);
       this.mapService.setDomainCoordinates(null);
     });
-    this.mapService.resultIsReady.next(true);
+    this.mapService.setResultIsReady(true);
     // Пример heat layer
     const heat = (L as any)
       .heatLayer(
@@ -204,7 +202,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
         .toPromise();
 
       if (!resultFiles || resultFiles.length === 0) {
-        console.log('No result files found');
+        console.error('No result files found');
         return;
       }
 
@@ -212,6 +210,7 @@ export class MapComponent implements AfterViewInit, OnInit, OnDestroy {
       const file = resultFiles[timeIndex || 0];
 
       if (!file) {
+        console.error('No result files found');
         return;
       }
 
